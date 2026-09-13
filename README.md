@@ -89,7 +89,7 @@ Current status of the historical issue list (synced with upstream in **1.00d-r3*
 
 - ~~The **pre-boss dialogue** plays over a solid black background instead of the stage behind it.~~ — **fixed in r3**. Upstream `af72ca9` restored the three Background draw gates to `Gui::IsStageFinished`, so the live stage keeps rendering behind dialogue (this was RT-006 in the decompilation's runtime ledger).
 - ~~**Items past the point-of-collection line are auto-attracted even below full power** — in the original, auto-collection only triggers at max power.~~ — **fixed in r3**. Upstream `7148a76` restored the gate: `GetPower() >= 128` instead of `>= 0`.
-- **Background flickering** on one of the stages — **expected to be gone, please retest r3.** The upstream dialogue-gate repair removed the backbuffer/afterimage class of artefacts that produced it; if it still shows up, it is a distinct defect and we will track it here.
+- **Background flickering** on one of the stages 
 - **Invisible lasers (hitbox active, beam not drawn)** — **not fixed by this update* Upstream has no change touching laser rendering
 
 Huge thanks to the decompilation's author for the remarkable reconstruction work this port stands on — as soon as these are addressed upstream, this port picks the fixes up with a plain rebuild.
