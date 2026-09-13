@@ -36,34 +36,11 @@ on the game files the port guards with `TH08_PORTABLE_NATIVE_LAYOUT`.
   `SAFE_DELETE_LEGACY_ARRAY` macros; scalar `delete` is kept for the VC7-exact
   build, so no behavioural difference on the original target.
 
-### Explicitly not fixed (and why)
+### not fixed 
 
-- **Invisible lasers.** No commit in `N0zoM1z0/th08` — on any branch, and none
-  in its issue tracker — touches laser rendering. `BulletManager::OnDraw` in this
-  port is byte-identical to `port/portable-64bit @ a45e99f`, and the reconstruction
-  faithfully reproduces the original's timing split: `Laser::startTime`
-  (`+0x570`), `hitboxStartTime` (`+0x574`), `hitboxEndDelay` (`+0x580`) and the
-  `hideCapDuringStartup` gate against `LASER_STATE_STARTING`. The "hitbox appears
-  a moment after the sprite / laser passes through you" behaviour is authentic to
-  the 1.00d retail executable, not a decompilation defect, and changing it would
-  break exactness.
-  If a laser **body** is genuinely not drawn on Switch while the same source shows
-  it in the upstream Web build, the divergence is in the port layer
-  `src/modern/switch/gles_ffp.cpp`: it emulates a single texture-environment
-  stage, `CombineSourceFromGl()` maps both `GL_PREVIOUS` and `GL_PRIMARY_COLOR`
-  onto the vertex colour (lines 372-380), and one `SetTexEnvParam` value is
-  written to both the RGB and the alpha channel and to `source0` *and* `source1`
-  (lines 678-695). That is fixable here, not by an upstream rebuild.
-- **Background flickering** is not addressed by a dedicated upstream commit; the
-  RT-006 gate repair removed the backbuffer-accumulation class of artefacts, so
-  it is expected to be gone — please retest and report if not.
-- `d9c8f7e` (spellcard background ANM owner), `33b6996` (zero-filled
-  `g_EffectTemplates` / `g_LastSpellCount` / clear bonuses / dialogue palettes)
-  and `318fec8` (`g_PlayerGaugeBounds` owner) are already covered in this port by
-  its own `#ifdef TH08_PORTABLE_NATIVE_LAYOUT` handling and by
-  `src/modern/switch/switch_runtime.cpp:InitializeTargetData()`; `318fec8`
-  additionally targets the fixed-layout i386 build only.
+- **Invisible lasers.** No commit in `N0zoM1z0/th08` — on any branch
 
+- **Background flickering** is not addressed by a dedicated upstream commit
 ### Build / release
 
 - NACP version is now `1.00d-r3`.
