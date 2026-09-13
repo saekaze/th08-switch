@@ -1,0 +1,235 @@
+From d23e9e034e8e9a1b74a6cfde7e12cd4107f457bb Mon Sep 17 00:00:00 2001
+From: test <t@t>
+Date: Sun, 13 Sep 2026 11:23:43 +0000
+Subject: [PATCH 2/4] Harden resource readers and array teardown (upstream
+ a45e99fb)
+
+- Lzss::Decode DECODE_HANDLE_FETCH checks the input bound before reading, so a
+  truncated LZSS stream no longer reads one byte past the buffer.
+- FileSystem::TryDecryptFromTable reports the real decrypted size (size - 4) under
+  TH08_MODERN_PORT, keeping bounded modern readers inside the returned block.
+- New ZUN_DELETE_ARRAY / ZUN_DELETE_ARRAY2 and SAFE_DELETE_LEGACY_ARRAY macros pair
+  legacy array allocations with delete[] in modern builds; the scalar delete path is
+  preserved when TH08_MODERN_PORT is not defined.
+---
+ src/Global.cpp      | 10 +++++++++-
+ src/Global.hpp      | 18 +++++++++++++++++-
+ src/MusicRoom.cpp   |  2 +-
+ src/TitleScreen.cpp |  4 ++--
+ src/main.cpp        |  4 ++++
+ src/pbg/Lzss.cpp    |  2 +-
+ src/zwave.cpp       | 21 +++++++++++++++------
+ 7 files changed, 49 insertions(+), 12 deletions(-)
+
+diff --git a/src/Global.cpp b/src/Global.cpp
+index 693607b..f3d6125 100644
+--- a/src/Global.cpp
++++ b/src/Global.cpp
+@@ -898,7 +898,7 @@ DIFFABLE_STATIC_ARRAY_ASSIGN(DecryptParams, 8, g_DecryptParams) = {
+ DIFFABLE_STATIC_ARRAY_ASSIGN(u8, 3, g_CryptSignature) = {0x85, 0xa4, 0xda};
+ 
+ #pragma var_order(rawData, decryptedData, i)
+-LPBYTE FileSystem::TryDecryptFromTable(LPBYTE inData, LPINT unused, i32 size)
++LPBYTE FileSystem::TryDecryptFromTable(LPBYTE inData, LPINT fileSize, i32 size)
+ {
+     LPBYTE rawData = inData;
+     LPBYTE decryptedData;
+@@ -919,6 +919,14 @@ LPBYTE FileSystem::TryDecryptFromTable(LPBYTE inData, LPINT unused, i32 size)
+         // 4 bytes are skipped to exclude the encryption signature
+         decryptedData = Decrypt(rawData + 4, size - 4, g_DecryptParams[i].xorValue, g_DecryptParams[i].xorValueInc,
+                                 g_DecryptParams[i].chunkSize, g_DecryptParams[i].maxBytesToDecrypt);
++        // Возвращённый блок больше на 4 байта заголовка шифрования: сообщаем
++        // точный размер, чтобы современные bounded-читатели не читали за концом.
++#ifdef TH08_MODERN_PORT
++        if (fileSize != NULL)
++        {
++            *fileSize = size - 4;
++        }
++#endif
+         g_ZunMemory.Free(inData);
+         return decryptedData;
+     }
+diff --git a/src/Global.hpp b/src/Global.hpp
+index 149925a..2567448 100644
+--- a/src/Global.hpp
++++ b/src/Global.hpp
+@@ -32,9 +32,25 @@ namespace th08
+     g_ZunMemory.RemoveFromRegistry(p);                                                                                 \
+     delete p;                                                                                                          \
+     p = NULL;
++#ifdef TH08_MODERN_PORT
++#define ZUN_DELETE_ARRAY(p)                                                                                            \
++    g_ZunMemory.RemoveFromRegistry(p);                                                                                 \
++    delete[] p;                                                                                                        \
++    p = NULL;
++#else
++// Скалярный delete сохранён для нативной точности VC7-сборки.
++#define ZUN_DELETE_ARRAY(p) ZUN_DELETE(p)
++#endif
+ #define ZUN_DELETE2(p)                                                                                                 \
+     delete p;                                                                                                          \
+     p = NULL;
++#ifdef TH08_MODERN_PORT
++#define ZUN_DELETE_ARRAY2(p)                                                                                           \
++    delete[] p;                                                                                                        \
++    p = NULL;
++#else
++#define ZUN_DELETE_ARRAY2(p) ZUN_DELETE2(p)
++#endif
+ 
+ #define ZUN_FREE(p)                                                                                                    \
+     g_ZunMemory.Free(p);                                                                                               \
+@@ -198,7 +214,7 @@ void ResetKeyboard();
+ namespace FileSystem
+ {
+ LPBYTE Decrypt(LPBYTE inData, i32 size, u8 xorValue, u8 xorValueInc, i32 chunkSize, i32 maxBytes);
+-LPBYTE TryDecryptFromTable(LPBYTE inData, LPINT unused, i32 size);
++LPBYTE TryDecryptFromTable(LPBYTE inData, LPINT fileSize, i32 size);
+ LPBYTE Encrypt(LPBYTE inData, i32 size, u8 xorValue, u8 xorValueInc, i32 chunkSize, i32 maxBytes);
+ LPBYTE OpenFile(LPCSTR path, i32 *fileSize, BOOL isExternalResource);
+ BOOL CheckIfFileAlreadyExists(LPCSTR path);
+diff --git a/src/MusicRoom.cpp b/src/MusicRoom.cpp
+index 337bfc8..0a2d0f2 100644
+--- a/src/MusicRoom.cpp
++++ b/src/MusicRoom.cpp
+@@ -554,7 +554,7 @@ out:
+ 
+ ZunResult MusicRoom::DeletedCallback(MusicRoom *musicRoom)
+ {
+-    ZUN_DELETE(musicRoom->trackDescriptors);
++    ZUN_DELETE_ARRAY(musicRoom->trackDescriptors);
+ 
+     g_AnmManager->ReleaseSurface(0);
+     g_AnmManager->ReleaseAnm(23);
+diff --git a/src/TitleScreen.cpp b/src/TitleScreen.cpp
+index ef39082..b3b8e22 100644
+--- a/src/TitleScreen.cpp
++++ b/src/TitleScreen.cpp
+@@ -677,7 +677,7 @@ ChainCallbackResult TitleScreen::OnUpdateStartMenu()
+     case TitleCurrentScreenState_Exit:
+         if (stateTimer >= 60)
+         {
+-            ZUN_DELETE2(this->vms);
++            ZUN_DELETE_ARRAY2(this->vms);
+             // Yes, this->vms is set to NULL twice.
+             this->vms = NULL;
+ 
+@@ -3972,7 +3972,7 @@ ZunResult TitleScreen::Release()
+ 
+     if (this->vms != NULL)
+     {
+-        ZUN_DELETE2(this->vms);
++        ZUN_DELETE_ARRAY2(this->vms);
+         /* Again, double NULL set. */
+         this->vms = NULL;
+     }
+diff --git a/src/main.cpp b/src/main.cpp
+index b697fbe..c3b64f9 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -1161,7 +1161,11 @@ ZunBool GameWindow::ResolveIt(char *shortcutPath, char *dstPath, i32 maxPathLen)
+                 }
+             }
+ 
++#ifdef TH08_MODERN_PORT
++            delete[] wPath;
++#else
+             delete wPath;
++#endif
+             ppf->Release();
+         }
+ 
+diff --git a/src/pbg/Lzss.cpp b/src/pbg/Lzss.cpp
+index efe843d..d97fff9 100644
+--- a/src/pbg/Lzss.cpp
++++ b/src/pbg/Lzss.cpp
+@@ -219,13 +219,13 @@ u8 *Lzss::Encode(u8 *in, i32 inSize, i32 *outSize)
+ #define DECODE_HANDLE_FETCH                                                                                            \
+     if (inBitMask == 0x80)                                                                                             \
+     {                                                                                                                  \
+-        currByte = *inCursor;                                                                                          \
+         if (inCursor - in >= size)                                                                                     \
+         {                                                                                                              \
+             currByte = 0;                                                                                              \
+         }                                                                                                              \
+         else                                                                                                           \
+         {                                                                                                              \
++            currByte = *inCursor;                                                                                      \
+             inCursor++;                                                                                                \
+         }                                                                                                              \
+         checksum += currByte;                                                                                          \
+diff --git a/src/zwave.cpp b/src/zwave.cpp
+index fa1e5ab..9d003c8 100644
+--- a/src/zwave.cpp
++++ b/src/zwave.cpp
+@@ -20,6 +20,13 @@
+ #include <mmsystem.h>
+ #include <windows.h>
+ 
++#ifdef TH08_MODERN_PORT
++#define SAFE_DELETE_LEGACY_ARRAY(p) SAFE_DELETE_ARRAY(p)
++#else
++// TH08 1.00d освобождает эти массивы скалярным operator delete.
++#define SAFE_DELETE_LEGACY_ARRAY(p) SAFE_DELETE(p)
++#endif
++
+ namespace th08
+ {
+ //-----------------------------------------------------------------------------
+@@ -175,12 +182,12 @@ HRESULT CSoundManager::CreateStreaming(CStreamingSound **ppStreamingSound, LPTST
+     if (FAILED(hr = pDSNotify->SetNotificationPositions(dwNotifyCount, aPosNotify)))
+     {
+         SAFE_RELEASE(pDSNotify);
+-        SAFE_DELETE(aPosNotify);
++        SAFE_DELETE_LEGACY_ARRAY(aPosNotify);
+         return DXTRACE_ERR(TEXT("SetNotificationPositions"), E_FAIL);
+     }
+ 
+     SAFE_RELEASE(pDSNotify);
+-    SAFE_DELETE(aPosNotify);
++    SAFE_DELETE_LEGACY_ARRAY(aPosNotify);
+ 
+     // Create the sound
+     *ppStreamingSound = new CStreamingSound(pDSBuffer, dwDSBufferSize, pWaveFile, dwNotifySize);
+@@ -254,12 +261,12 @@ HRESULT CSoundManager::CreateStreamingFromMemory(CStreamingSound **ppStreamingSo
+     if (FAILED(hr = pDSNotify->SetNotificationPositions(dwNotifyCount, aPosNotify)))
+     {
+         SAFE_RELEASE(pDSNotify);
+-        SAFE_DELETE(aPosNotify);
++        SAFE_DELETE_LEGACY_ARRAY(aPosNotify);
+         return DXTRACE_ERR(TEXT("SetNotificationPositions"), E_FAIL);
+     }
+ 
+     SAFE_RELEASE(pDSNotify);
+-    SAFE_DELETE(aPosNotify);
++    SAFE_DELETE_LEGACY_ARRAY(aPosNotify);
+ 
+     // Create the sound
+     *ppStreamingSound = new CStreamingSound(pDSBuffer, dwDSBufferSize, pWaveFile, dwNotifySize);
+@@ -312,7 +319,7 @@ HRESULT CStreamingSound::InitSoundBuffers()
+     for (i = 0; i < m_dwNumBuffers; i++)
+         SAFE_RELEASE(m_apDSBuffer[i]);
+ 
+-    SAFE_DELETE(m_apDSBuffer);
++    SAFE_DELETE_LEGACY_ARRAY(m_apDSBuffer);
+ 
+     DSBPOSITIONNOTIFY *aPosNotify = NULL;
+     LPDIRECTSOUNDNOTIFY pDSNotify = NULL;
+@@ -345,7 +352,7 @@ HRESULT CStreamingSound::InitSoundBuffers()
+         }
+ 
+         SAFE_RELEASE(pDSNotify);
+-        SAFE_DELETE(aPosNotify);
++        SAFE_DELETE_LEGACY_ARRAY(aPosNotify);
+     }
+ 
+     return S_OK;
+@@ -1191,3 +1198,5 @@ HRESULT CWaveFile::Close()
+     return S_OK;
+ }
+ }; // namespace th08
++
++#undef SAFE_DELETE_LEGACY_ARRAY
+-- 
+2.47.3
+

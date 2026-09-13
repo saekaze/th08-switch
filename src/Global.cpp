@@ -898,7 +898,7 @@ DIFFABLE_STATIC_ARRAY_ASSIGN(DecryptParams, 8, g_DecryptParams) = {
 DIFFABLE_STATIC_ARRAY_ASSIGN(u8, 3, g_CryptSignature) = {0x85, 0xa4, 0xda};
 
 #pragma var_order(rawData, decryptedData, i)
-LPBYTE FileSystem::TryDecryptFromTable(LPBYTE inData, LPINT unused, i32 size)
+LPBYTE FileSystem::TryDecryptFromTable(LPBYTE inData, LPINT fileSize, i32 size)
 {
     LPBYTE rawData = inData;
     LPBYTE decryptedData;
@@ -919,6 +919,14 @@ LPBYTE FileSystem::TryDecryptFromTable(LPBYTE inData, LPINT unused, i32 size)
         // 4 bytes are skipped to exclude the encryption signature
         decryptedData = Decrypt(rawData + 4, size - 4, g_DecryptParams[i].xorValue, g_DecryptParams[i].xorValueInc,
                                 g_DecryptParams[i].chunkSize, g_DecryptParams[i].maxBytesToDecrypt);
+        // Возвращённый блок больше на 4 байта заголовка шифрования: сообщаем
+        // точный размер, чтобы современные bounded-читатели не читали за концом.
+#ifdef TH08_MODERN_PORT
+        if (fileSize != NULL)
+        {
+            *fileSize = size - 4;
+        }
+#endif
         g_ZunMemory.Free(inData);
         return decryptedData;
     }

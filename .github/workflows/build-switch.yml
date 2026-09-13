@@ -3,8 +3,12 @@ name: Build Switch NRO
 on:
   push:
     branches: [ main ]
+    tags: [ 'v*' ]
   pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -34,3 +38,17 @@ jobs:
         with:
           name: touhou08-nro
           path: touhou08.nro
+
+      # На теге v* дополнительно считаем чексумму — она кладётся в релиз рядом с NRO.
+      - name: Checksum
+        run: sha256sum touhou08.nro > touhou08.nro.sha256
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            touhou08.nro
+            touhou08.nro.sha256
+          body_path: RELEASE_NOTES.md
+          fail_on_unmatched_files: true

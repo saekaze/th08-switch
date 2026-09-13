@@ -726,7 +726,7 @@ ChainCallbackResult Background::OnDrawHighPrio(Background *background)
     background->tint.b = 0x80;
 
     if (background->spellBackgroundState <= SPELL_BACKGROUND_FADING_IN &&
-        !g_Gui.IsDialoguePresent())
+        !g_Gui.IsStageFinished())
     {
         if (background->stageVm0.activeSpriteIndex > 0)
         {
@@ -791,7 +791,7 @@ ChainCallbackResult Background::OnDrawHighPrio(Background *background)
     }
 
     if (background->spellBackgroundState <= SPELL_BACKGROUND_FADING_IN &&
-        !g_Gui.IsDialoguePresent())
+        !g_Gui.IsStageFinished())
     {
         background->RenderObjects(0);
         background->RenderObjects(1);
@@ -810,7 +810,7 @@ ChainCallbackResult Background::OnDrawLowPrio(Background *background)
     f32 zValue;
 
     if (background->spellBackgroundState <= SPELL_BACKGROUND_FADING_IN &&
-        !g_Gui.IsDialoguePresent())
+        !g_Gui.IsStageFinished())
     {
         background->RenderObjects(2);
         background->RenderObjects(3);

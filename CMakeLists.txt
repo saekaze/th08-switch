@@ -254,7 +254,7 @@ elseif(NINTENDO_SWITCH)
     nx_generate_nacp(OUTPUT "${CMAKE_BINARY_DIR}/th08-base.nacp"
         NAME "Touhou 8: Imperishable Night"
         AUTHOR "ZUN / Team Shanghai Alice"
-        VERSION "1.00d-r2")
+        VERSION "1.00d-r3")
     add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/th08.nacp"
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/scripts/nacp_lang.py"
                 "${CMAKE_BINARY_DIR}/th08-base.nacp" "${CMAKE_BINARY_DIR}/th08.nacp"

@@ -1,0 +1,25 @@
+From db04996076b95f5f283924b3504e30d8f40f7dfa Mon Sep 17 00:00:00 2001
+From: test <t@t>
+Date: Sun, 13 Sep 2026 11:46:45 +0000
+Subject: [PATCH 4/4] CI: fix mixed-language comment in workflow
+
+---
+ .github/workflows/build-switch.yml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/.github/workflows/build-switch.yml b/.github/workflows/build-switch.yml
+index 2ec83c4..faad070 100644
+--- a/.github/workflows/build-switch.yml
++++ b/.github/workflows/build-switch.yml
+@@ -39,7 +39,7 @@ jobs:
+           name: touhou08-nro
+           path: touhou08.nro
+ 
+-      # На теге v* additionally собираем чексумму — она кладётся в релиз рядом с NRO.
++      # На теге v* дополнительно считаем чексумму — она кладётся в релиз рядом с NRO.
+       - name: Checksum
+         run: sha256sum touhou08.nro > touhou08.nro.sha256
+ 
+-- 
+2.47.3
+

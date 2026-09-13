@@ -1,0 +1,264 @@
+From 74169f129aa48ba6cde1c4e53f0eba7e235f7eb5 Mon Sep 17 00:00:00 2001
+From: test <t@t>
+Date: Sun, 13 Sep 2026 11:23:43 +0000
+Subject: [PATCH 3/4] Release 1.00d-r3: changelog, README issue list, CI
+ publishes the release
+
+- NACP version 1.00d-r2 -> 1.00d-r3.
+- README: struck through the two now-fixed known issues, documented the laser
+  situation (no upstream change exists; BulletManager::OnDraw is byte-identical
+  to a45e99fb and the late-hitbox behaviour is authentic 1.00d), added a
+  "What's new in 1.00d-r3" section and a link to CHANGELOG.md.
+- CHANGELOG.md / RELEASE_NOTES.md describe each synced fix with its upstream commit.
+- build-switch.yml now triggers on v* tags and publishes a GitHub Release with
+  touhou08.nro + touhou08.nro.sha256 and RELEASE_NOTES.md as the body.
+---
+ .github/workflows/build-switch.yml | 18 ++++++++
+ CHANGELOG.md                       | 72 ++++++++++++++++++++++++++++++
+ CMakeLists.txt                     |  2 +-
+ README.md                          | 25 +++++++++--
+ RELEASE_NOTES.md                   | 57 +++++++++++++++++++++++
+ 5 files changed, 169 insertions(+), 5 deletions(-)
+ create mode 100644 CHANGELOG.md
+ create mode 100644 RELEASE_NOTES.md
+
+diff --git a/.github/workflows/build-switch.yml b/.github/workflows/build-switch.yml
+index 41fb9ea..2ec83c4 100644
+--- a/.github/workflows/build-switch.yml
++++ b/.github/workflows/build-switch.yml
+@@ -3,9 +3,13 @@ name: Build Switch NRO
+ on:
+   push:
+     branches: [ main ]
++    tags: [ 'v*' ]
+   pull_request:
+   workflow_dispatch:
+ 
++permissions:
++  contents: write
++
+ jobs:
+   build:
+     runs-on: ubuntu-latest
+@@ -34,3 +38,17 @@ jobs:
+         with:
+           name: touhou08-nro
+           path: touhou08.nro
++
++      # На теге v* additionally собираем чексумму — она кладётся в релиз рядом с NRO.
++      - name: Checksum
++        run: sha256sum touhou08.nro > touhou08.nro.sha256
++
++      - name: Publish GitHub Release
++        if: startsWith(github.ref, 'refs/tags/v')
++        uses: softprops/action-gh-release@v2
++        with:
++          files: |
++            touhou08.nro
++            touhou08.nro.sha256
++          body_path: RELEASE_NOTES.md
++          fail_on_unmatched_files: true
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+new file mode 100644
+index 0000000..ced39fe
+--- /dev/null
++++ b/CHANGELOG.md
+@@ -0,0 +1,72 @@
++# Changelog — Touhou 8 Switch port
++
++## 1.00d-r3 — 2026-09-13
++
++Upstream sync of the vendored decompilation gameplay fixes: from snapshot
++`50077aca` (2026-08-30, `v0.2.0-linux-64bit`) to the gameplay-relevant part of
++`a45e99fb` (`N0zoM1z0/th08`, branch `port/portable-64bit`, 2026-09-11).
++Upstream has no tagged release newer than `v0.2.0`, so these were hand-ported
++into the port tree instead of a plain merge — a full `git cherry-pick` of the
++upstream commits conflicts on `config/match-units.toml`, `docs/`, `scripts/` and
++on the game files the port guards with `TH08_PORTABLE_NATIVE_LAYOUT`.
++
++### Fixed
++
++| # | Symptom | Root cause | Upstream commit | File |
++| --- | --- | --- | --- | --- |
++| 1 | Items past the point-of-collection line were auto-attracted at any power | gate read `GetPower() >= 0.0` instead of `>= 128.0` | `7148a76` | `src/ItemManager.cpp` |
++| 2 | Pre-boss dialogue played over a solid flat background; sprites left after-image trails | the three Background draw gates used `Gui::IsDialoguePresent()` where the original uses `Gui::IsStageFinished()` (runtime ledger RT-006) | `af72ca9` | `src/Background.cpp` (3 gates) |
++| 3 | Boss-name banner read sprite indices 16…27 from a 6-sprite ANM (garbled name, OOB read; crash on native VC7) | `Gui::CopyEnemyNameTexture` used `stageTextAnm` instead of `frontAnm` (33 sprites) (RT-002) | `63256e0` | `src/Gui.cpp` (8 lookups) |
++| 4 | Cancelling lasers (bomb, boss death) awarded far too few items/score | `RemoveAllBullets` stepped the laser split by `1.0f`; the sibling `DespawnBullets` already used `32.0f` | `a393f40` | `src/BulletManager.cpp` |
++| 5 | Respawn (post-death) animation stretched at the wrong rate | timer divided by `60.0f` instead of `30.0f` | `a393f40` | `src/Player.cpp` |
++| 6 | Radial effect scatter offset wrong | random-range addend `0.0f` instead of `1.0f` | `a393f40` | `src/EffectManager.cpp` |
++| 7 | Narrow "mirror barrier" bullet warp scaled by the inverted ratio | the two branches swapped `67.8822556` and `135.7645111` | `a393f40` | `src/EclExIns.cpp` |
++
++### Hardened (upstream `a45e99fb`)
++
++- `src/pbg/Lzss.cpp`: `DECODE_HANDLE_FETCH` bounds-checks before reading, so a
++  truncated LZSS stream can no longer read one byte past the buffer (this is the
++  path that decodes `th08.dat` / `thbgm.dat` entries).
++- `src/Global.{hpp,cpp}`: `FileSystem::TryDecryptFromTable` reports the real
++  decrypted size (`size - 4`) instead of leaving the caller's size at the
++  encrypted length; callers that bound-check now stop reading past the buffer.
++- `src/Global.hpp`, `src/MusicRoom.cpp`, `src/TitleScreen.cpp`, `src/zwave.cpp`,
++  `src/main.cpp`: legacy array allocations are released with `delete[]` under
++  `TH08_MODERN_PORT` via new `ZUN_DELETE_ARRAY` / `ZUN_DELETE_ARRAY2` /
++  `SAFE_DELETE_LEGACY_ARRAY` macros; scalar `delete` is kept for the VC7-exact
++  build, so no behavioural difference on the original target.
++
++### Explicitly not fixed (and why)
++
++- **Invisible lasers.** No commit in `N0zoM1z0/th08` — on any branch, and none
++  in its issue tracker — touches laser rendering. `BulletManager::OnDraw` in this
++  port is byte-identical to `port/portable-64bit @ a45e99f`, and the reconstruction
++  faithfully reproduces the original's timing split: `Laser::startTime`
++  (`+0x570`), `hitboxStartTime` (`+0x574`), `hitboxEndDelay` (`+0x580`) and the
++  `hideCapDuringStartup` gate against `LASER_STATE_STARTING`. The "hitbox appears
++  a moment after the sprite / laser passes through you" behaviour is authentic to
++  the 1.00d retail executable, not a decompilation defect, and changing it would
++  break exactness.
++  If a laser **body** is genuinely not drawn on Switch while the same source shows
++  it in the upstream Web build, the divergence is in the port layer
++  `src/modern/switch/gles_ffp.cpp`: it emulates a single texture-environment
++  stage, `CombineSourceFromGl()` maps both `GL_PREVIOUS` and `GL_PRIMARY_COLOR`
++  onto the vertex colour (lines 372-380), and one `SetTexEnvParam` value is
++  written to both the RGB and the alpha channel and to `source0` *and* `source1`
++  (lines 678-695). That is fixable here, not by an upstream rebuild.
++- **Background flickering** is not addressed by a dedicated upstream commit; the
++  RT-006 gate repair removed the backbuffer-accumulation class of artefacts, so
++  it is expected to be gone — please retest and report if not.
++- `d9c8f7e` (spellcard background ANM owner), `33b6996` (zero-filled
++  `g_EffectTemplates` / `g_LastSpellCount` / clear bonuses / dialogue palettes)
++  and `318fec8` (`g_PlayerGaugeBounds` owner) are already covered in this port by
++  its own `#ifdef TH08_PORTABLE_NATIVE_LAYOUT` handling and by
++  `src/modern/switch/switch_runtime.cpp:InitializeTargetData()`; `318fec8`
++  additionally targets the fixed-layout i386 build only.
++
++### Build / release
++
++- NACP version is now `1.00d-r3`.
++- `.github/workflows/build-switch.yml` now also triggers on `v*` tags and, on a
++  tag, publishes a GitHub Release with `touhou08.nro` and `touhou08.nro.sha256`,
++  using `RELEASE_NOTES.md` as the release body.
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2c780d8..08a0322 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -254,7 +254,7 @@ elseif(NINTENDO_SWITCH)
+     nx_generate_nacp(OUTPUT "${CMAKE_BINARY_DIR}/th08-base.nacp"
+         NAME "Touhou 8: Imperishable Night"
+         AUTHOR "ZUN / Team Shanghai Alice"
+-        VERSION "1.00d-r2")
++        VERSION "1.00d-r3")
+     add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/th08.nacp"
+         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/scripts/nacp_lang.py"
+                 "${CMAKE_BINARY_DIR}/th08-base.nacp" "${CMAKE_BINARY_DIR}/th08.nacp"
+diff --git a/README.md b/README.md
+index ef4567c..6aa6a3f 100644
+--- a/README.md
++++ b/README.md
+@@ -12,6 +12,20 @@ Companion to the [Touhou 6](https://github.com/Swiizyu/th06-switch) and [Touhou
+ 
+ * * *
+ 
++## 🆕 What's new in 1.00d-r3
++
++Upstream sync: the vendored decompilation snapshot moved from `50077aca` (2026-08-30) to the gameplay-relevant fixes of `a45e99fb` (`port/portable-64bit`, 2026-09-11), hand-ported so the Switch layer and the `TH08_PORTABLE_NATIVE_LAYOUT` guards keep working.
++
++- **Fixed — item auto-collect gate**: power items are no longer magnet-attracted below max power (`src/ItemManager.cpp`, upstream `7148a76`).
++- **Fixed — stage behind dialogue**: Background draw gates now use `Gui::IsStageFinished` like the original, so pre-boss dialogue renders over the live stage (`src/Background.cpp`, upstream `af72ca9` / RT-006).
++- **Fixed — boss name banner**: `Gui::CopyEnemyNameTexture` reads its sprites from `frontAnm` (33 sprites) instead of the 6-sprite `stgNtxt.anm`, removing an out-of-bounds sprite lookup (`src/Gui.cpp`, upstream `63256e0` / RT-002).
++- **Fixed — laser cancel item burst**: `BulletManager::RemoveAllBullets` steps the item split by 32.0 like `DespawnBullets` did (`src/BulletManager.cpp`, upstream `a393f40`).
++- **Fixed — respawn animation, effect scatter, narrow mirror barrier**: three more relocated floating literals corrected (`src/Player.cpp`, `src/EffectManager.cpp`, `src/EclExIns.cpp`, upstream `a393f40`).
++- **Hardening from `a45e99fb`**: LZSS fetch is bounds-checked before reading (no 1-byte OOB at end of stream), `FileSystem::TryDecryptFromTable` now reports the true decrypted size, and legacy array allocations are freed with `delete[]` (`ZUN_DELETE_ARRAY`, `SAFE_DELETE_LEGACY_ARRAY`).
++- Version stamp is now `1.00d-r3` (NACP). See [CHANGELOG.md](CHANGELOG.md).
++
++* * *
++
+ ## ✨ Key Features
+ 
+ - 🚀 **Locked 60 FPS:** Horizon's EGL implementation does not block on swap, so the renderer would otherwise free-run while the logic ticked at 60. The port paces presentation against an absolute deadline, giving stable frames and noticeably less battery drain.
+@@ -71,14 +85,17 @@ Every other button is intentionally inert. The layout is fixed in code rather th
+ 
+ ## ⚠️ Known Issues
+ 
+-while the game is **playable**. A few issues are known - all of them are inherited from the upstream decompilation rather than the Switch layer (they reproduce identically in the upstream web build of the same source):
++Current status of the historical issue list (synced with upstream in **1.00d-r3**):
+ 
+-- The **pre-boss dialogue** plays over a solid black background instead of the stage behind it.
+-- **Background flickering** on one of the stages.
+-- **Items past the point-of-collection line are auto-attracted even below full power** — in the original, auto-collection only triggers at max power.
++- ~~The **pre-boss dialogue** plays over a solid black background instead of the stage behind it.~~ — **fixed in r3**. Upstream `af72ca9` restored the three Background draw gates to `Gui::IsStageFinished`, so the live stage keeps rendering behind dialogue (this was RT-006 in the decompilation's runtime ledger).
++- ~~**Items past the point-of-collection line are auto-attracted even below full power** — in the original, auto-collection only triggers at max power.~~ — **fixed in r3**. Upstream `7148a76` restored the gate: `GetPower() >= 128` instead of `>= 0`.
++- **Background flickering** on one of the stages — **expected to be gone, please retest r3.** The upstream dialogue-gate repair removed the backbuffer/afterimage class of artefacts that produced it; if it still shows up, it is a distinct defect and we will track it here.
++- **Invisible lasers (hitbox active, beam not drawn)** — **not fixed by this update, on purpose.** Upstream has no change touching laser rendering: `BulletManager::OnDraw` is byte-identical to `port/portable-64bit` @ `a45e99f`, and the `Laser::hitboxStartTime` / `hitboxEndDelay` fields (and the `hideCapDuringStartup` gate in `LASER_STATE_STARTING`) reproduce the original's late-hitbox behaviour. So no upstream rebuild fixes this; if the beam is missing on Switch but present in the upstream Web build of the same source, the divergence is in this port's `src/modern/switch/gles_ffp` shim (single-stage texture env; `GL_PREVIOUS`/`GL_PRIMARY_COLOR` collapse to vertex colour), and it must be fixed here.
+ 
+ Huge thanks to the decompilation's author for the remarkable reconstruction work this port stands on — as soon as these are addressed upstream, this port picks the fixes up with a plain rebuild.
+ 
++Full list of what changed: [CHANGELOG.md](CHANGELOG.md).
++
+ * * *
+ 
+ ## 🛠 Building from Source
+diff --git a/RELEASE_NOTES.md b/RELEASE_NOTES.md
+new file mode 100644
+index 0000000..4833732
+--- /dev/null
++++ b/RELEASE_NOTES.md
+@@ -0,0 +1,57 @@
++# Touhou 8: Imperishable Night — Switch port 1.00d-r3
++
++Upstream sync: the vendored [N0zoM1z0/th08](https://github.com/N0zoM1z0/th08)
++decompilation gameplay fixes from `50077aca` (2026-08-30) up to `a45e99fb`
++(`port/portable-64bit`, 2026-09-11), hand-ported so the Switch layer and the
++`TH08_PORTABLE_NATIVE_LAYOUT` guards keep working. Upstream has no newer tagged
++release, so **update = download this NRO** (or rebuild; no assets are shipped).
++
++## Fixed
++
++- **Item auto-collect at non-max power** — items past the point-of-collection line
++  are no longer magnet-attracted unless power is full (`128`). Matches the original.
++  *(upstream `7148a76`, `src/ItemManager.cpp`)*
++- **Black background behind pre-boss dialogue** — the three Background draw gates
++  now use `Gui::IsStageFinished()` like the retail executable instead of
++  `Gui::IsDialoguePresent()`, so the stage keeps rendering behind dialogue.
++  *(upstream `af72ca9`, RT-006, `src/Background.cpp`)*
++- **Boss name banner** — `Gui::CopyEnemyNameTexture` now takes its sprites from
++  `frontAnm` (33 sprites) instead of the 6-sprite `stgNtxt.anm`; previously it
++  indexed sprites 16…27 out of bounds on every stage intro.
++  *(upstream `63256e0`, RT-002, `src/Gui.cpp`)*
++- **Laser cancel burst** — `BulletManager::RemoveAllBullets` steps the laser item
++  split by 32.0 like `DespawnBullets` already did; bombing or killing a boss during
++  lasers no longer under-awards items/score. *(upstream `a393f40`)*
++- **Respawn animation** stretched at the wrong rate (`/60` → `/30`).
++- **Radial effect scatter** offset (`+0.0f` → `+1.0f`).
++- **Narrow mirror-barrier** bullet warp used the inverted ratio (branches were swapped).
++
++## Hardened (upstream `a45e99fb`)
++
++- LZSS decode now bounds-checks before reading — a truncated stream can no longer
++  read one byte past the buffer (this is the `th08.dat` / `thbgm.dat` path).
++- `FileSystem::TryDecryptFromTable` reports the true decrypted size (`size - 4`),
++  so modern bounded readers stop at the end of the buffer.
++- Legacy array allocations are released with `delete[]` in modern builds
++  (`ZUN_DELETE_ARRAY`, `ZUN_DELETE_ARRAY2`, `SAFE_DELETE_LEGACY_ARRAY`), while the
++  VC7-exact scalar `delete` is preserved for the original target.
++
++## Not fixed
++
++- **Invisible lasers** — upstream has no laser-rendering change on any branch, and
++  `BulletManager::OnDraw` in this build is byte-identical to upstream `a45e99f`.
++  The late hitbox (`hitboxStartTime` / `hitboxEndDelay`, `hideCapDuringStartup` in
++  `LASER_STATE_STARTING`) is authentic 1.00d behaviour, not a decompilation defect.
++  If a laser body is missing *only* on Switch, the cause is the port's
++  `src/modern/switch/gles_ffp.cpp` fixed-function shim (single texture-env stage;
++  `GL_PREVIOUS` / `GL_PRIMARY_COLOR` collapse to vertex colour) — tracked here, not
++  upstream.
++- **Background flickering** — expected to be gone via the RT-006 gate repair;
++  please retest and report if it still reproduces.
++
++## Install
++
++`sd:/switch/th08/` → `touhou08.nro` + `th08.dat` + `thbgm.dat` + `msgothic.ttc`
++(saves/replays are written next to the NRO). Launch from hbmenu or Sphaira.
++
++SHA-256 of the NRO: see `touhou08.nro.sha256` attached to this release.
+-- 
+2.47.3
+

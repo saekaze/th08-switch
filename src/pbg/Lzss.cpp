@@ -219,13 +219,13 @@ u8 *Lzss::Encode(u8 *in, i32 inSize, i32 *outSize)
 #define DECODE_HANDLE_FETCH                                                                                            \
     if (inBitMask == 0x80)                                                                                             \
     {                                                                                                                  \
-        currByte = *inCursor;                                                                                          \
         if (inCursor - in >= size)                                                                                     \
         {                                                                                                              \
             currByte = 0;                                                                                              \
         }                                                                                                              \
         else                                                                                                           \
         {                                                                                                              \
+            currByte = *inCursor;                                                                                      \
             inCursor++;                                                                                                \
         }                                                                                                              \
         checksum += currByte;                                                                                          \

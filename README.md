@@ -12,6 +12,20 @@ Companion to the [Touhou 6](https://github.com/Swiizyu/th06-switch) and [Touhou 
 
 * * *
 
+## 🆕 What's new in 1.00d-r3
+
+Upstream sync: the vendored decompilation snapshot moved from `50077aca` (2026-08-30) to the gameplay-relevant fixes of `a45e99fb` (`port/portable-64bit`, 2026-09-11), hand-ported so the Switch layer and the `TH08_PORTABLE_NATIVE_LAYOUT` guards keep working.
+
+- **Fixed — item auto-collect gate**: power items are no longer magnet-attracted below max power (`src/ItemManager.cpp`, upstream `7148a76`).
+- **Fixed — stage behind dialogue**: Background draw gates now use `Gui::IsStageFinished` like the original, so pre-boss dialogue renders over the live stage (`src/Background.cpp`, upstream `af72ca9` / RT-006).
+- **Fixed — boss name banner**: `Gui::CopyEnemyNameTexture` reads its sprites from `frontAnm` (33 sprites) instead of the 6-sprite `stgNtxt.anm`, removing an out-of-bounds sprite lookup (`src/Gui.cpp`, upstream `63256e0` / RT-002).
+- **Fixed — laser cancel item burst**: `BulletManager::RemoveAllBullets` steps the item split by 32.0 like `DespawnBullets` did (`src/BulletManager.cpp`, upstream `a393f40`).
+- **Fixed — respawn animation, effect scatter, narrow mirror barrier**: three more relocated floating literals corrected (`src/Player.cpp`, `src/EffectManager.cpp`, `src/EclExIns.cpp`, upstream `a393f40`).
+- **Hardening from `a45e99fb`**: LZSS fetch is bounds-checked before reading (no 1-byte OOB at end of stream), `FileSystem::TryDecryptFromTable` now reports the true decrypted size, and legacy array allocations are freed with `delete[]` (`ZUN_DELETE_ARRAY`, `SAFE_DELETE_LEGACY_ARRAY`).
+- Version stamp is now `1.00d-r3` (NACP). See [CHANGELOG.md](CHANGELOG.md).
+
+* * *
+
 ## ✨ Key Features
 
 - 🚀 **Locked 60 FPS:** Horizon's EGL implementation does not block on swap, so the renderer would otherwise free-run while the logic ticked at 60. The port paces presentation against an absolute deadline, giving stable frames and noticeably less battery drain.
@@ -71,13 +85,16 @@ Every other button is intentionally inert. The layout is fixed in code rather th
 
 ## ⚠️ Known Issues
 
-while the game is **playable**. A few issues are known - all of them are inherited from the upstream decompilation rather than the Switch layer (they reproduce identically in the upstream web build of the same source):
+Current status of the historical issue list (synced with upstream in **1.00d-r3**):
 
-- The **pre-boss dialogue** plays over a solid black background instead of the stage behind it.
-- **Background flickering** on one of the stages.
-- **Items past the point-of-collection line are auto-attracted even below full power** — in the original, auto-collection only triggers at max power.
+- ~~The **pre-boss dialogue** plays over a solid black background instead of the stage behind it.~~ — **fixed in r3**. Upstream `af72ca9` restored the three Background draw gates to `Gui::IsStageFinished`, so the live stage keeps rendering behind dialogue (this was RT-006 in the decompilation's runtime ledger).
+- ~~**Items past the point-of-collection line are auto-attracted even below full power** — in the original, auto-collection only triggers at max power.~~ — **fixed in r3**. Upstream `7148a76` restored the gate: `GetPower() >= 128` instead of `>= 0`.
+- **Background flickering** on one of the stages — **expected to be gone, please retest r3.** The upstream dialogue-gate repair removed the backbuffer/afterimage class of artefacts that produced it; if it still shows up, it is a distinct defect and we will track it here.
+- **Invisible lasers (hitbox active, beam not drawn)** — **not fixed by this update, on purpose.** Upstream has no change touching laser rendering: `BulletManager::OnDraw` is byte-identical to `port/portable-64bit` @ `a45e99f`, and the `Laser::hitboxStartTime` / `hitboxEndDelay` fields (and the `hideCapDuringStartup` gate in `LASER_STATE_STARTING`) reproduce the original's late-hitbox behaviour. So no upstream rebuild fixes this; if the beam is missing on Switch but present in the upstream Web build of the same source, the divergence is in this port's `src/modern/switch/gles_ffp` shim (single-stage texture env; `GL_PREVIOUS`/`GL_PRIMARY_COLOR` collapse to vertex colour), and it must be fixed here.
 
 Huge thanks to the decompilation's author for the remarkable reconstruction work this port stands on — as soon as these are addressed upstream, this port picks the fixes up with a plain rebuild.
+
+Full list of what changed: [CHANGELOG.md](CHANGELOG.md).
 
 * * *
 
