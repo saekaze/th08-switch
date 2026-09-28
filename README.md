@@ -8,7 +8,7 @@ A native homebrew port of ZUN's 2004 bullet hell danmaku classic **Touhou 8: Imp
 
 Built on the [N0zoM1z0/th08](https://github.com/N0zoM1z0/th08) decompilation (`port/portable-64bit` branch), this port runs the game through SDL2 on an OpenGL ES 3 context over Nouveau/Mesa and paces itself to a locked 60 FPS on Horizon — no Linux, Box64 or Wine involved.
 
-Companion to the [Touhou 6](https://github.com/Swiizyu/th06-switch) and [Touhou 7](https://github.com/Swiizyu/th07-switch) Switch ports.
+Companion to the [Touhou 6](https://github.com/saekaze/th06-switch) and [Touhou 7](https://github.com/saekaze/th07-switch) Switch ports.
 
 * * *
 
