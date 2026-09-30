@@ -1,0 +1,20 @@
+TH08 Switch port - third-party notices
+
+Original game, characters, graphics, dialogue, music and effects: Team Shanghai Alice / ZUN.
+Game data and the MS Gothic font are separate original/proprietary assets; the
+source code does not grant a license to those assets, and none are included.
+
+Game code (game/, platform/, portable/) comes from YomotsuHisami/th08 (TH08
+portable 3.4). That repository asserts no blanket license and asks that each
+bundled component keep its own notices; they are reproduced in licenses/:
+- SoftFloat 3e (third_party/softfloat.c): BSD 3-clause, The Regents of the
+  University of California (licenses/SoftFloat.txt).
+- TH08 reference code the reconstruction adapts: KSS, MIT (th08-reference-MIT.txt).
+- miniaudio: MIT or public domain, MIT notice included (miniaudio.txt).
+- stb_image, stb_vorbis: MIT or public domain (stb_image.h.txt, stb_vorbis.h.txt).
+
+Linked on the Switch (devkitPro portlibs), not included in this repository:
+- SDL2 and SDL2_ttf: zlib license.
+- FreeType: FreeType License. Portions copyright The FreeType Project.
+- HarfBuzz (MIT), libpng (libpng license), zlib (zlib), bzip2 (BSD-style),
+  Mesa (MIT), libnx (ISC).

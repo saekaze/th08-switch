@@ -1,67 +1,95 @@
 #!/usr/bin/env python3
-"""Записывает в NACP японский языковой слот.
+"""Patch per-language title entries in a Switch NACP.
 
-ВАЖНО: массив языковых записей NACP НЕ индексируется по SetLanguage!
-Настоящий порядок (libnx, nx/source/runtime/nacp.c, g_nacpLanguageTable;
-совпадает с SwitchBrew «Control.nacp Language»):
+nacptool writes the same name/author into all 16 language slots. This script
+overrides individual slots, e.g. to show the original Japanese title only when
+the console's system language is Japanese.
 
-    слот 0  = AmericanEnglish      (setMakeLanguage(SetLanguage_ENUS) → 0)
-    слот 1  = BritishEnglish
-    слот 2  = Japanese             ← сюда!
-    слот 3  = French
-    слот 4  = German
-    слот 5  = LatinAmericanSpanish
-    слот 6  = Spanish
-    слот 7  = Italian
-    слот 8  = Dutch
-    слот 9  = CanadianFrench
-    слот 10 = Portuguese
-    слот 11 = Russian
-    слот 12 = Korean
-    слот 13 = TraditionalChinese
-    слот 14 = SimplifiedChinese
-    слот 15 = BrazilianPortuguese
-
-Раскладка записи: имя 0x200 UTF-8 NUL-terminated + автор 0x100, всего 0x300,
-16 записей с offset 0. nacptool заполняет ВСЕ слоты одинаковыми (английскими)
-строками, поэтому достаточно перезаписать слот 2 японскими названием/автором.
-
-Использование: nacp_lang.py <вход.nacp> <выход.nacp>
+Usage:
+    nacp_lang.py in.nacp out.nacp --lang Japanese --name "..." --author "..."
 """
 
+import argparse
+import shutil
 import sys
+
+# NacpLanguageEntry order, as defined by libnx / nn.
+LANGUAGES = [
+    "AmericanEnglish",
+    "BritishEnglish",
+    "Japanese",
+    "French",
+    "German",
+    "LatinAmericanSpanish",
+    "Spanish",
+    "Italian",
+    "Dutch",
+    "CanadianFrench",
+    "Portuguese",
+    "Russian",
+    "Korean",
+    "TraditionalChinese",
+    "SimplifiedChinese",
+    "BrazilianPortuguese",
+]
 
 ENTRY_SIZE = 0x300
 NAME_SIZE = 0x200
 AUTHOR_SIZE = 0x100
 
-# (индекс слота, имя, автор)
-SLOTS = [
-    (2, "Japanese", "東方永夜抄　～ Imperishable Night", "上海アリス幻樂団"),
-]
 
-def put(dest: bytearray, offset: int, size: int, text: str) -> None:
-    raw = text.encode("utf-8")
-    if len(raw) + 1 > size:
-        raise SystemExit(f"строка не помещается в слот: {text!r}")
-    dest[offset:offset + size] = raw + b"\x00" * (size - len(raw))
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("input")
+    ap.add_argument("output")
+    ap.add_argument("--lang", action="append", required=True, choices=LANGUAGES)
+    ap.add_argument("--name", action="append", required=True)
+    ap.add_argument("--author", action="append", required=True)
+    ap.add_argument("--fill-empty-name", help="fill language slots nacptool left blank")
+    ap.add_argument("--fill-empty-author", help="fill language slots nacptool left blank")
+    args = ap.parse_args()
 
-def main() -> None:
-    if len(sys.argv) != 3:
-        raise SystemExit(__doc__)
-    with open(sys.argv[1], "rb") as handle:
-        nacp = bytearray(handle.read())
-    if len(nacp) < 16 * ENTRY_SIZE:
-        raise SystemExit(f"файл NACP подозрительно мал: {len(nacp)} байт")
+    if not (len(args.lang) == len(args.name) == len(args.author)):
+        ap.error("--lang/--name/--author must be given the same number of times")
 
-    for slot, language, name, author in SLOTS:
-        base = slot * ENTRY_SIZE
-        put(nacp, base, NAME_SIZE, name)
-        put(nacp, base + NAME_SIZE, AUTHOR_SIZE, author)
-        print(f"nacp_lang: слот {slot} ({language}) <- '{name}' / '{author}'")
+    shutil.copyfile(args.input, args.output)
+    with open(args.output, "r+b") as f:
+        data = bytearray(f.read())
 
-    with open(sys.argv[2], "wb") as handle:
-        handle.write(nacp)
+        for lang, name, author in zip(args.lang, args.name, args.author):
+            idx = LANGUAGES.index(lang)
+            off = idx * ENTRY_SIZE
+
+            name_b = name.encode("utf-8")
+            author_b = author.encode("utf-8")
+            if len(name_b) >= NAME_SIZE:
+                sys.exit(f"name too long for {lang}")
+            if len(author_b) >= AUTHOR_SIZE:
+                sys.exit(f"author too long for {lang}")
+
+            data[off:off + NAME_SIZE] = name_b.ljust(NAME_SIZE, b"\0")
+            data[off + NAME_SIZE:off + ENTRY_SIZE] = author_b.ljust(AUTHOR_SIZE, b"\0")
+            print(f"[nacp_lang] {lang}: {name} / {author}")
+
+        # nacptool only populates the first 12 language slots; consoles set to
+        # Korean/Chinese/pt-BR would otherwise show a blank title.
+        if args.fill_empty_name and args.fill_empty_author:
+            name_b = args.fill_empty_name.encode("utf-8")
+            author_b = args.fill_empty_author.encode("utf-8")
+            for idx, lang in enumerate(LANGUAGES):
+                off = idx * ENTRY_SIZE
+                if data[off] != 0:
+                    continue
+                data[off:off + NAME_SIZE] = name_b.ljust(NAME_SIZE, b"\0")
+                data[off + NAME_SIZE:off + ENTRY_SIZE] = author_b.ljust(AUTHOR_SIZE, b"\0")
+                print(f"[nacp_lang] {lang}: filled with default title")
+
+        f.seek(0)
+        f.write(data)
+        f.truncate()
+
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

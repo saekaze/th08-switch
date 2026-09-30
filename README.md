@@ -1,158 +1,170 @@
 # Touhou 8: Imperishable Night — Nintendo Switch Port
+*(東方永夜抄　〜 Imperishable Night)*
 
-_(東方永夜抄　～ Imperishable Night)_
+![Platform](https://img.shields.io/badge/Platform-Nintendo%20Switch-e60012?style=for-the-badge&logo=nintendoswitch&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Fully%20Playable-brightgreen?style=for-the-badge)
+![License](https://img.shields.io/badge/Port%20Code-CC0%201.0-blue?style=for-the-badge)
 
-![Platform](https://img.shields.io/badge/Platform-Nintendo%20Switch-e60012?style=for-the-badge&logo=nintendoswitch&logoColor=white)![Status](https://img.shields.io/badge/Status-Playable-green?style=for-the-badge)![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
+A native homebrew port of ZUN's 2004 danmaku classic **Touhou 8: Imperishable Night** for the **Nintendo Switch** (Horizon OS).
 
-A native homebrew port of ZUN's 2004 bullet hell danmaku classic **Touhou 8: Imperishable Night** for the **Nintendo Switch** (Horizon OS).
+From 1.00d-r4 this port runs the C++ reconstruction from [YomotsuHisami/th08](https://github.com/YomotsuHisami/th08) (the same author as the TH09/TH11 ports), compiled **natively for ARM64** and driven by an SDL2 host on an OpenGL ES 3 context — no Linux, Box64 or Wine involved. Earlier releases (r1–r3) used the N0zoM1z0/th08 decompilation.
 
-Built on the [N0zoM1z0/th08](https://github.com/N0zoM1z0/th08) decompilation (`port/portable-64bit` branch), this port runs the game through SDL2 on an OpenGL ES 3 context over Nouveau/Mesa and paces itself to a locked 60 FPS on Horizon — no Linux, Box64 or Wine involved.
+Companion to the [Touhou 6](https://github.com/saekaze/th06-switch), [Touhou 7](https://github.com/saekaze/th07-switch), [Touhou 9](https://github.com/saekaze/th09-switch), [Touhou 10](https://github.com/saekaze/th10-switch) and [Touhou 11](https://github.com/saekaze/th11-switch) Switch ports, with the same `touhou8.nro` + `sd:/switch/touhou/touhou8/` layout.
 
-Companion to the [Touhou 6](https://github.com/saekaze/th06-switch) and [Touhou 7](https://github.com/saekaze/th07-switch) Switch ports.
+---
 
-* * *
+## 🆕 What's New in 1.00d-r4 — a new base, the old bugs are gone
 
-## 🆕 What's new in 1.00d-r3
+r1–r3 were built on the N0zoM1z0/th08 decompilation, which could get laggy and kept a few rendering bugs that could only be fixed upstream. **r4 moves the whole port to a new base:** YomotsuHisami's TH08 C++ reconstruction (the same author as the Touhou 9 and Touhou 11 ports), compiled natively for ARM64. It is a different code base, so the old decompilation's bugs don't carry over:
 
-Upstream sync: the vendored decompilation snapshot moved from `50077aca` (2026-08-30) to the gameplay-relevant fixes of `a45e99fb` (`port/portable-64bit`, 2026-09-11), hand-ported so the Switch layer and the `TH08_PORTABLE_NATIVE_LAYOUT` guards keep working.
+* ~~Lag / slowdown in busy scenes~~ — gone with the new base.
+* ~~**Background flickering** on one of the stages~~ — gone with the new base.
+* ~~**Invisible lasers** (hitbox active, beam not drawn)~~ — gone with the new base.
+* ~~Pre-boss dialogue over a solid black background~~ — gone (was fixed in r3, stays fixed).
+* ~~Items auto-collected below full power~~ — gone (was fixed in r3, stays fixed).
+* ~~Garbled boss-name banner, laser-cancel item burst, respawn animation speed, effect scatter, mirror-barrier warp~~ — gone (were fixed in r3, stay fixed).
 
-- **Fixed — item auto-collect gate**: power items are no longer magnet-attracted below max power (`src/ItemManager.cpp`, upstream `7148a76`).
-- **Fixed — stage behind dialogue**: Background draw gates now use `Gui::IsStageFinished` like the original, so pre-boss dialogue renders over the live stage (`src/Background.cpp`, upstream `af72ca9` / RT-006).
-- **Fixed — boss name banner**: `Gui::CopyEnemyNameTexture` reads its sprites from `frontAnm` (33 sprites) instead of the 6-sprite `stgNtxt.anm`, removing an out-of-bounds sprite lookup (`src/Gui.cpp`, upstream `63256e0` / RT-002).
-- **Fixed — laser cancel item burst**: `BulletManager::RemoveAllBullets` steps the item split by 32.0 like `DespawnBullets` did (`src/BulletManager.cpp`, upstream `a393f40`).
-- **Fixed — respawn animation, effect scatter, narrow mirror barrier**: three more relocated floating literals corrected (`src/Player.cpp`, `src/EffectManager.cpp`, `src/EclExIns.cpp`, upstream `a393f40`).
-- **Hardening from `a45e99fb`**: LZSS fetch is bounds-checked before reading (no 1-byte OOB at end of stream), `FileSystem::TryDecryptFromTable` now reports the true decrypted size, and legacy array allocations are freed with `delete[]` (`ZUN_DELETE_ARRAY`, `SAFE_DELETE_LEGACY_ARRAY`).
-- Version stamp is now `1.00d-r3` (NACP). See [CHANGELOG.md](CHANGELOG.md).
+Also new in r4:
 
-* * *
+* 🎯 **Exact PC arithmetic:** the game's x87 floating-point behaviour is reproduced bit-for-bit (SoftFloat), like upstream does for replays and RNG.
+* 🎮 **Remappable controls:** the Switch buttons are now TH08's own gamepad, so the in-game **Key Config** works. The defaults are the same layout as before; the D-Pad and sticks only move.
+* ⏳ **Loading bar** at startup, 👆 **touch controls** in handheld mode.
+* 📁 **One folder for all Touhou ports:** `sd:/switch/touhou/touhou8/` (recommended) — the NRO's own folder is always checked first, so your current setup keeps working.
+* 🏷️ **The NRO is now `touhou8.nro`**, matching the other ports. Delete the old `touhou08.nro` when updating so hbmenu doesn't list the game twice. Your `th08.cfg`, `score.dat` and replays keep working.
+* The MIDI music option isn't available; music comes from `thbgm.dat`.
+
+---
 
 ## ✨ Key Features
 
-- 🚀 **Locked 60 FPS:** Horizon's EGL implementation does not block on swap, so the renderer would otherwise free-run while the logic ticked at 60. The port paces presentation against an absolute deadline, giving stable frames and noticeably less battery drain.
-- 🌙 **OLED-Friendly Pillarboxing:** The original 640×480 playfield is centred inside the Switch's 1280×720 display with pure black (`#000000`) bars.
-- 🔊 **Native-Rate Audio:** Sound is delivered through an SDL2 audio callback at the game's own 44.1 kHz 16-bit stereo rate — no resampling anywhere in the path. BGM plays straight out of `thbgm.dat`.
-- 🎮 **Fixed, Sane Controls:** Joy-Con (handheld, grip, detached) and Pro Controller via SDL2's gamepad API.
-- 🌏 **Language-Aware Title:** hbmenu shows the original Japanese title on consoles set to 日本語 and the romanised one everywhere else, filled across all 16 NACP language slots.
-- 📁 **Flexible Data Location:** The game data can sit in `sd:/switch/th08/`, `sd:/th08/`, `sd:/games/th08/`, `sd:/roms/th08/` or `sd:/switch/touhou8/`, plus `touhou 8`, `imperishable night` and `in` variants.
-- 💾 **Saves Next to the Data:** `th08.cfg`, `score.dat`, replays and snapshots are written into the same SD folder the game loaded from.
+* 🎯 **Faithful Arithmetic:** the game's x87 floating-point behaviour is reproduced bit-for-bit with SoftFloat, as upstream does for replay and RNG accuracy.
+* ⬛ **OLED-Friendly Pillarboxing:** the original 640×480 picture is centred with pure black (`#000000`) bars and an aspect-correct upscale.
+* 🔊 **Full Audio:** sound effects plus BGM streamed straight out of your `thbgm.dat` (original 16-bit PCM and loop points — no conversion step).
+* 🎮 **Sane, Remappable Controls:** defaults match the TH10 port; the Switch buttons act as TH08's gamepad, so the in-game **Key Config** can rebind them.
+* 👆 **Touch Screen:** in handheld mode, drag to move — upstream's touch controller, mapped through the pillarbox.
+* 🈂️ **Japanese Text:** MS Gothic (`msgothic.ttc`) like the PC game, or the Switch's built-in Japanese font as a fallback.
+* ⏳ **Loading Bar:** start-up shows its progress while the archive, fonts and first animations are prepared.
+* 🌏 **Language-Aware Title:** hbmenu shows `東方永夜抄　～ Imperishable Night` on consoles set to 日本語 and the romanised title everywhere else.
+* 💾 **Saves Next to the Data:** `th08.cfg`, `score.dat`, replays (`replay/th8_01.rpy` …) and snapshots are written into the SD folder the game loaded from.
 
-* * *
+---
 
 ## 📥 Installation Guide
 
-> ⚠️ **Disclaimer:** In compliance with ZUN's guidelines and copyright law, this repository contains **ONLY the homebrew engine code**. No game assets are distributed. You must legally own a copy of _Touhou 8: Imperishable Night v1.00d_.
+> ⚠️ **Disclaimer:** In compliance with ZUN's guidelines and copyright law, this repository contains **ONLY the homebrew engine code**. No game assets are distributed. You must legally own a copy of *Touhou 8: Imperishable Night v1.00d*.
 
 ### 1. SD Card File Structure
 
 1. Ensure your Nintendo Switch is running custom firmware (Atmosphère CFW).
-2. Download the latest `touhou08.nro` from the [Releases](https://github.com/Swiizyu/th08-switch/releases) tab (or build from source).
-3. Create a folder named `sd:/switch/th08/` and copy the following into it:
+2. Download the latest `touhou8.nro` from the [Releases](../../releases) tab (or build from source).
+3. Create the folder `sd:/switch/touhou/touhou8/` and copy the following into it:
 
-```
-sd:/switch/th08/
-    ├── touhou08.nro          # Nintendo Switch homebrew executable
-    ├── th08.dat              # Main game archive
+```text
+sd:/switch/touhou/touhou8/
+    ├── touhou8.nro           # Nintendo Switch homebrew executable
+    ├── th08.dat              # Main game archive (v1.00d)
     ├── thbgm.dat             # Background music archive
-    └── msgothic.ttc          # Japanese font (ships with the Windows release)
+    └── msgothic.ttc          # MS Gothic (C:\Windows\Fonts) - recommended
 ```
 
-The loader also accepts `sd:/th08/`, `sd:/touhou8/`, `sd:/switch/touhou8/`, `sd:/games/th08/`, `sd:/roms/th08/` in any capitalisation — or simply the folder the NRO was launched from.
+`thbgm.dat` is optional (the game runs without music; the MIDI music option is not available). Without `msgothic.ttc` the console's built-in Japanese font is used.
 
-### 2. Music
+**Recommended place: `sd:/switch/touhou/touhou8/`.** Keeping every Touhou port in one `sd:/switch/touhou/` folder (`touhou6`, `touhou7`, `touhou8` …) is much tidier than a separate folder per game. Other places still work: the port first looks in its own folder (wherever the NRO is), then for a `th08` / `touhou8` folder (any capitalisation) directly on the SD card, in `switch/`, `touhou/`, `switch/touhou/`, `games/` or `roms/`. Saves from r1–r3 (`th08.cfg`, `score.dat`, replays) sit in the same place and keep working.
 
-No extra soundtrack download is needed: Imperishable Night ships its BGM inside `thbgm.dat`, and the port plays it directly. MIDI mode is unavailable (Horizon has no system synthesizer) and is not needed.
+### 2. Launching
 
-### 3. Launching
+Run `touhou8.nro` from the **Homebrew Menu (hbmenu)**, **Sphaira launcher**, or a home screen forwarder. Title-menu **Quit** returns to hbmenu. If something is missing, the port shows what and where it looked, and `th08-switch.log` is written next to the saves.
 
-Run `touhou08.nro` from the **Homebrew Menu (hbmenu)**, **Sphaira launcher**, or a home screen forwarder.
-
-* * *
+---
 
 ## 🕹 Controls
 
+Defaults (the same layout as the TH10 port):
+
 | Nintendo Switch Button | Action |
-| :-- | :-- |
+| :--- | :--- |
 | **Left Stick / D-Pad** | Character Movement |
 | **B** | Shoot / Confirm |
 | **A** | Bomb / Cancel |
-| **L** | Focus (Precision Slow-Motion Movement) |
-| **R** | Skip Dialogue (hold) |
+| **L / ZL** | Focus (Precision Slow-Motion Movement) |
+| **R / ZR** | Skip Dialogue |
 | **+ (Plus)** | Pause / In-Game Menu |
+| **− (Minus)** | Snapshot (saved to `snapshot/` next to the game data) |
+| **Touch** (handheld) | Drag to move |
 
-Every other button is intentionally inert. The layout is fixed in code rather than read from `th08.cfg`, so it behaves identically on every controller.
+Key Config numbers the buttons as: 0 B, 1 A, 2 L/ZL, 3 R/ZR, 4 +, 5 X, 6 Y. The D-Pad and sticks only move — they can never be picked as a button.
 
-* * *
-
-## ⚠️ Known Issues
-
-Current status of the historical issue list (synced with upstream in **1.00d-r3**):
-
-- ~~The **pre-boss dialogue** plays over a solid black background instead of the stage behind it.~~ — **fixed in r3**. Upstream `af72ca9` restored the three Background draw gates to `Gui::IsStageFinished`, so the live stage keeps rendering behind dialogue (this was RT-006 in the decompilation's runtime ledger).
-- ~~**Items past the point-of-collection line are auto-attracted even below full power** — in the original, auto-collection only triggers at max power.~~ — **fixed in r3**. Upstream `7148a76` restored the gate: `GetPower() >= 128` instead of `>= 0`.
-- **Background flickering** on one of the stages 
-- **Invisible lasers (hitbox active, beam not drawn)** — **not fixed by this update* Upstream has no change touching laser rendering
-
-Huge thanks to the decompilation's author for the remarkable reconstruction work this port stands on — as soon as these are addressed upstream, this port picks the fixes up with a plain rebuild.
-
-Full list of what changed: [CHANGELOG.md](CHANGELOG.md).
-
-* * *
+---
 
 ## 🛠 Building from Source
 
 ### Automated Build (GitHub Actions)
 
-This repository includes a CI pipeline (`.github/workflows/build-switch.yml`). Push or fork the repository and the workflow compiles `th08.nro` inside the official `devkitpro/devkita64` container, uploading it as a downloadable artifact.
+`.github/workflows/build-switch.yml` (a copy also lives in `scripts/`) compiles `touhou8.nro` inside the official `devkitpro/devkita64` container and uploads it as an artifact; tagging `v*` also publishes it as a release asset. A second job builds the same sources for Linux and runs the host tests.
 
 ### Local Build (Linux / macOS / WSL)
 
 1. Install [devkitPro](https://devkitpro.org/wiki/Getting_Started) with `devkitA64` and `libnx`.
 2. Install the required Switch portlibs:
 
-```
-sudo dkp-pacman -Syu
-sudo dkp-pacman -S switch-dev switch-mesa switch-sdl2 switch-sdl2_ttf switch-sdl2_image switch-freetype switch-harfbuzz switch-libpng switch-libjpeg-turbo switch-libwebp switch-libavif switch-bzip2
-```
+   ```bash
+   sudo dkp-pacman -Syu
+   sudo dkp-pacman -S switch-dev switch-mesa switch-libdrm_nouveau switch-sdl2 switch-sdl2_ttf switch-freetype switch-libpng switch-bzip2 switch-zlib switch-harfbuzz
+   ```
 
 3. Build:
 
+   ```bash
+   export DEVKITPRO=/opt/devkitpro
+   ./scripts/build_switch.sh
+   ```
+
+   The result is `build-switch/touhou8.nro`.
+
+Desktop Linux test build and host tests (same sources; needs `clang libsdl2-dev libsdl2-ttf-dev libfreetype-dev libgles-dev`, and `xvfb` + a CJK font for the full test set):
+
+```bash
+CC=clang CXX=clang++ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build
+xvfb-run -a ./build/th08_host_tests
+./build/touhou8 /path/to/folder/with/th08.dat
 ```
-export DEVKITPRO=/opt/devkitpro
-./scripts/build_switch.sh          # configures (CMake + Ninja) and builds
-```
 
-The result is `build-switch/th08.nro`.
+---
 
-If the devkitPro pacman mirrors are unreachable, `scripts/pull_dkp.sh` pulls the exact same toolchain (devkitA64, libnx and the Switch portlibs) out of the official `devkitpro/devkita64` Docker image into `/opt/devkitpro` instead.
+## 📂 How It Works
 
-* * *
-
-## 📂 What This Fork Changes
-
-Everything Switch-specific is confined to `src/modern/switch/` or guarded by `#ifdef __SWITCH__`, keeping rebases onto upstream cheap:
+The game logic is the architecture-independent C++ from upstream (`game/`, `platform/`), compiled natively for AArch64 with the upstream's own code-generation contract (`-ffp-contract=off -fno-strict-aliasing -fno-exceptions -fno-rtti`). See [`upstream/UPSTREAM.md`](upstream/UPSTREAM.md) and the exact [`switch-port.patch`](upstream/switch-port.patch).
 
 | File | Purpose |
-| :-- | :-- |
-| `src/modern/switch/switch_compat.cpp` | platform layer: SD data folder discovery, files/streams/events, gamepad, SDL audio, GDI bitmap shims, CP932 |
-| `src/modern/switch/gles_ffp.{hpp,cpp}` | fixed-function pipeline → OpenGL ES 3 shim |
-| `src/modern/switch/switch_runtime.cpp` | entry point, startup hooks, crash reporter (`modern-crash.txt`, written into the data folder) |
-| `src/modern/linux/d3d8_compat.cpp` | FBO-backed D3D8 device, fog, 4:3 letterboxing + 60 FPS pacer, GPU `CopyRects` blits, texture upload paths |
-| `src/modern/switch/cp932_table.h` | generated CP932→Unicode table for the Shift-JIS text renderer |
-| `scripts/build_switch.sh` | one-shot configure + build |
-| `scripts/pull_dkp.sh` | devkitPro toolchain from the Docker image (mirror fallback) |
-| `scripts/nacp_lang.py` | per-language NACP titles |
-| `CMakeLists.txt` | `NINTENDO_SWITCH` platform branch |
+| :--- | :--- |
+| `game/` | upstream TH08 game logic (stages, ECL/ANM, players, spell cards, menus, replays, …) |
+| `platform/` | upstream runtime shell (`BrowserRuntime`: archive, textures, audio manager, fonts) |
+| `third_party/softfloat.c` | SoftFloat 3e — the x87 arithmetic |
+| `portable/sdl/Renderer.*` | upstream semantic GLES renderer, ported SDL3/WebGL2 → SDL2/GLES 3 |
+| `sdl/main.cpp` | Switch main loop, controller, touch, loading bar, snapshots |
+| `sdl/FileHost.cpp` | `th08.dat` reader (stdio), SD-card saves |
+| `sdl/GraphicsHost.*` | game textures and draws → renderer |
+| `sdl/AudioHost.cpp` / `sdl/BgmStream.*` | miniaudio mixer; BGM streamed from `thbgm.dat` with original loop points |
+| `sdl/FontHost.cpp` | Japanese text through SDL2_ttf (MS Gothic or system font) |
+| `sdl/Platform.*` | SD paths, files, log |
+| `platform/switch/icon.jpg` | 256×256 NRO icon (the original game cover) |
+| `scripts/build_switch.sh` | one-shot Switch build |
+| `scripts/nacp_lang.py` | Japanese NACP title slot |
+| `scripts/gen_cp932.py` | CP932 → Unicode table for text |
+| `tests/test_host.cpp` | host tests for the port layer |
 
-A few defensive guards were also added around the game's own data access: some of the original game data references sprite/script/effect indices past the end of their arrays. On Windows those out-of-bounds reads silently land in adjacent memory, but on Horizon they fault — so the port bounds-checks them and skips the invalid entry, matching the observable behaviour of the original.
+The game ticks once per vsync (60 Hz); after a real stall it catches up by at most four ticks, like upstream's frame cadence. The CPU is set to the same 1785 MHz boost the other native ports use.
 
-* * *
+---
 
 ## 🤝 Credits & Acknowledgments
 
-- **ZUN / Team Shanghai Alice** — original creator and developer of the Touhou Project series.
-- **[N0zoM1z0](https://github.com/N0zoM1z0/th08)** (and KSS) — the Touhou 8 decompilation and its cross-platform `port` branches.
-- **Switchbrew & devkitPro Team** — the open-source `libnx` SDK and Switch toolchain.
+* **ZUN / Team Shanghai Alice** — original creator and developer of the Touhou Project series.
+* **[YomotsuHisami](https://github.com/YomotsuHisami/th08)** — the TH08 C++ reconstruction this port is built on.
+* **KSS** — the TH08 reference code the reconstruction adapts (MIT, see `upstream/licenses/`).
+* **[N0zoM1z0](https://github.com/N0zoM1z0/th08)** — the decompilation used by r1–r3 of this port.
+* **John R. Hauser / UC Berkeley** — SoftFloat.
+* **miniaudio**, **SDL2 / SDL2_ttf**, **FreeType**, **stb_image** — audio mixing, windowing, text, images.
+* **Switchbrew & devkitPro Team** — the open-source `libnx` SDK and Switch toolchain.
 
-## License
-
-MIT — same as the upstream decompilation. See [LICENSE](LICENSE).
+**Licensing:** the Switch host code (`sdl/main.cpp`, `sdl/Platform.*`, `sdl/BgmStream.*`, `scripts/`, `tests/`, build files) is CC0 1.0 (see `LICENSE`). `game/`, `platform/`, `portable/`, `third_party/` and the adapted `sdl/` hosts are upstream code — see [`upstream/THIRD-PARTY-NOTICES.txt`](upstream/THIRD-PARTY-NOTICES.txt) and [`upstream/licenses/`](upstream/licenses/). Bundled third-party headers keep their own licences (`portable/sdl/third_party/`).

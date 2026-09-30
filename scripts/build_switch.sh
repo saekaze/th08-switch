@@ -1,11 +1,11 @@
 #!/bin/bash
-# Сборка th08.nro для Nintendo Switch.
+# Build touhou8.nro for Nintendo Switch (mirrors Saekaze's build_switch.sh).
 #
-# ВАЖНО: switch.specs (libnx) раскрывает %:getenv(DEVKITPRO ...) при каждом
-# вызове компилятора/линкера — переменная DEVKITPRO должна быть установлена
-# и на этапе конфигурации, и на этапе сборки. Этот скрипт делает это сам.
+# NOTE: switch.specs (libnx) expands %:getenv(DEVKITPRO ...) on every compiler
+# and linker call, so DEVKITPRO must be set both at configure and build time.
+# This script handles that itself.
 #
-# Использование: scripts/build_switch.sh [build-dir] [доп. флаги ninja...]
+# Usage: scripts/build_switch.sh [build-dir] [extra ninja args...]
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -16,8 +16,8 @@ export DEVKITPRO="${DEVKITPRO:-/opt/devkitpro}"
 TOOLCHAIN="${DEVKITPRO}/cmake/Switch.cmake"
 
 if [ ! -f "${TOOLCHAIN}" ]; then
-    echo "devkitPro не найден в ${DEVKITPRO}." >&2
-    echo "Запустите scripts/pull_dkp.sh или установите DEVKITPRO." >&2
+    echo "devkitPro not found in ${DEVKITPRO}." >&2
+    echo "Install devkitA64 + switch portlibs and set DEVKITPRO." >&2
     exit 1
 fi
 

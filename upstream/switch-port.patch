@@ -1,0 +1,916 @@
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/AnmLayout.hpp b/game/AnmLayout.hpp
+--- a/game/AnmLayout.hpp	2026-09-29 19:01:51.534405234 +0000
++++ b/game/AnmLayout.hpp	2026-09-29 19:02:00.788339463 +0000
+@@ -258,7 +258,7 @@
+     AnmLoaded *anmFile;
+ };
+ 
+-static_assert(sizeof(AnmVmBase) == 0x208);
++TH_LAYOUT_ASSERT(sizeof(AnmVmBase) == 0x208);
+ 
+ struct AnmVm : AnmVmBase
+ {
+@@ -302,7 +302,7 @@
+     i32 *GetIntVarPtr(i32 *varPtr, u16 varMask, u32 variableNumber);
+ };
+ 
+-static_assert(sizeof(AnmVm) == 0x2a4);
++TH_LAYOUT_ASSERT(sizeof(AnmVm) == 0x2a4);
+ 
+ 
+ }
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/AnmLibrary.hpp b/game/AnmLibrary.hpp
+--- a/game/AnmLibrary.hpp	2026-09-29 19:01:51.534442012 +0000
++++ b/game/AnmLibrary.hpp	2026-09-29 19:02:00.788300001 +0000
+@@ -5,7 +5,7 @@
+ #include <array>
+ namespace th08 {
+ struct AnmTextureEntry { u32 texture=0; const u8* external_data=nullptr; u32 external_size=0; };
+-static_assert(sizeof(AnmTextureEntry)==12);
++TH_LAYOUT_ASSERT(sizeof(AnmTextureEntry)==12);
+ class AnmLibrary {
+ public:
+     explicit AnmLibrary(TextureStore& textures):textures(textures){}
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/AnmRenderer.cpp b/game/AnmRenderer.cpp
+--- a/game/AnmRenderer.cpp	2026-09-29 19:01:51.534456288 +0000
++++ b/game/AnmRenderer.cpp	2026-09-29 19:02:00.788460193 +0000
+@@ -4,7 +4,7 @@
+ #include "GameMath.hpp"
+ #include "GraphicsMath.hpp"
+ #include <cmath>
+-#include "../../../portable/numeric/SpriteNumber.hpp"
++#include "../portable/numeric/SpriteNumber.hpp"
+ #include <algorithm>
+ 
+ namespace th08 {
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/AnmRenderer.hpp b/game/AnmRenderer.hpp
+--- a/game/AnmRenderer.hpp	2026-09-29 19:01:51.534480857 +0000
++++ b/game/AnmRenderer.hpp	2026-09-29 19:02:00.788592153 +0000
+@@ -2,7 +2,7 @@
+ #include "AnmLayout.hpp"
+ #include "Camera.hpp"
+ #include <vector>
+-#include "../../../portable/sdl/RenderCommands.hpp"
++#include "../portable/sdl/RenderCommands.hpp"
+ 
+ namespace th08 {
+ using namespace touhou::graphics;
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/Arithmetic.cpp b/game/Arithmetic.cpp
+--- a/game/Arithmetic.cpp	2026-09-29 19:01:51.534600896 +0000
++++ b/game/Arithmetic.cpp	2026-09-29 19:02:00.842216226 +0000
+@@ -1,12 +1,16 @@
+ #include "Arithmetic.hpp"
+-#include "../../../portable/numeric/ExactFloat.hpp"
++#include "../portable/numeric/ExactFloat.hpp"
++#include <cstdint>
++
++// Switch port: declared at global scope - GCC gives extern "C" variables in an
++// unnamed namespace internal linkage (clang does not), which breaks the link.
++extern "C" uint_fast8_t softfloat_roundingMode, extF80_roundingPrecision; // as in softfloat.c
+ 
+ namespace th08 {
+ namespace {
+ struct FloatBits32 { u32 value; };
+ struct FloatBits64 { u64 value; };
+ extern "C" {
+-extern u8 softfloat_roundingMode, extF80_roundingPrecision;
+ void f32_to_extF80M(FloatBits32, Extended*);
+ void f64_to_extF80M(FloatBits64, Extended*);
+ void i32_to_extF80M(i32, Extended*);
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/Arithmetic.hpp b/game/Arithmetic.hpp
+--- a/game/Arithmetic.hpp	2026-09-29 19:01:51.534616874 +0000
++++ b/game/Arithmetic.hpp	2026-09-29 19:02:00.788579293 +0000
+@@ -1,6 +1,6 @@
+ #pragma once
+ #include "Types.hpp"
+-#include "../../../portable/numeric/ScalarMath.hpp"
++#include "../portable/numeric/ScalarMath.hpp"
+ 
+ namespace th08 {
+ // Numeric compatibility for the original game's extended intermediate values.
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/AsciiManager.hpp b/game/AsciiManager.hpp
+--- a/game/AsciiManager.hpp	2026-09-29 19:01:51.534653309 +0000
++++ b/game/AsciiManager.hpp	2026-09-29 19:02:00.788441675 +0000
+@@ -43,8 +43,8 @@
+     AnmVm blindness;
+ };
+ static_assert(sizeof(AsciiString)==0x60 && sizeof(AsciiPopup)==0x38);
+-static_assert(sizeof(AsciiState)==0x171b0);
+-static_assert(offsetof(AsciiState,strings)==0x2264 && offsetof(AsciiState,score_popups)==0xb4dc);
++TH_LAYOUT_ASSERT(sizeof(AsciiState)==0x171b0);
++TH_LAYOUT_ASSERT(offsetof(AsciiState,strings)==0x2264 && offsetof(AsciiState,score_popups)==0xb4dc);
+ 
+ // Values owned by the game and supplied to the display layer each frame.
+ struct AsciiContext {
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/BackgroundState.hpp b/game/BackgroundState.hpp
+--- a/game/BackgroundState.hpp	2026-09-29 19:01:51.534831353 +0000
++++ b/game/BackgroundState.hpp	2026-09-29 19:02:00.788410215 +0000
+@@ -21,7 +21,7 @@
+     i32 effect_flags,effect_visible;Vec3 effect_positions[32];
+     BackgroundState(){std::memset(this,0,sizeof(*this));camera=SceneCamera{};camera_final=camera_initial=camera;}
+ };
+-static_assert(sizeof(BackgroundState)==0x6600);
+-static_assert(offsetof(BackgroundState,time)==0x80c&&offsetof(BackgroundState,fog)==0xaec);
+-static_assert(offsetof(BackgroundState,camera)==0x6394&&offsetof(BackgroundState,effect_positions)==0x6480);
++TH_LAYOUT_ASSERT(sizeof(BackgroundState)==0x6600);
++TH_LAYOUT_ASSERT(offsetof(BackgroundState,time)==0x80c&&offsetof(BackgroundState,fog)==0xaec);
++TH_LAYOUT_ASSERT(offsetof(BackgroundState,camera)==0x6394&&offsetof(BackgroundState,effect_positions)==0x6480);
+ }
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/BulletEmission.hpp b/game/BulletEmission.hpp
+--- a/game/BulletEmission.hpp	2026-09-29 19:01:51.534961893 +0000
++++ b/game/BulletEmission.hpp	2026-09-29 19:02:00.788628570 +0000
+@@ -13,7 +13,7 @@
+     i16 count=0,layers=0,pattern=0,unknown1fa=0;u32 flags=0;
+     i32 sound=0,transform_sound=0,extra_index=0;struct BulletTemplate* type=nullptr;
+ };
+-static_assert(sizeof(BulletEmission)==0x210&&offsetof(BulletEmission,count)==0x1f4);
++TH_LAYOUT_ASSERT(sizeof(BulletEmission)==0x210&&offsetof(BulletEmission,count)==0x1f4);
+ struct BulletEmissionActions {
+     virtual ~BulletEmissionActions()=default;
+     virtual void emit(BulletEmission& parameters)=0;
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/BulletState.hpp b/game/BulletState.hpp
+--- a/game/BulletState.hpp	2026-09-29 19:01:51.535102050 +0000
++++ b/game/BulletState.hpp	2026-09-29 19:02:00.788795503 +0000
+@@ -16,17 +16,17 @@
+     BulletState* next_in_layer=nullptr;i32 barrier_cooldown=0,transform_sound=0,current_extra=0;
+     BulletExtra extras[18];BulletExtraState extra_state[7];u8 reisen_illusion=0,padding10b5[3]{};
+ };
+-static_assert(sizeof(BulletState)==0x10b8&&offsetof(BulletState,state)==0xdb8&&offsetof(BulletState,extras)==0xdd0);
++TH_LAYOUT_ASSERT(sizeof(BulletState)==0x10b8&&offsetof(BulletState,state)==0xdb8&&offsetof(BulletState,extras)==0xdd0);
+ struct LaserState {
+     AnmVm animation[2];Vec3 position;float angle=0,start_offset=0,end_offset=0,length=0,width=0,width2=0,speed=0;
+     i32 start=0,hitbox_start=0,duration=0,stop=0,hitbox_stop=0,in_use=0;Timer timer;u16 flags=0;i16 color=0;u8 state=0;i8 unknown599=0;u8 padding[2]{};
+ };
+-static_assert(sizeof(LaserState)==0x59c);
++TH_LAYOUT_ASSERT(sizeof(LaserState)==0x59c);
+ struct BulletManagerState {
+     BulletTemplates templates;BulletState bullets[1537];LaserState lasers[256];
+     i32 active_count=0,cancel_frames=0;Timer timer;i32 unknown_counter=0;const char* filename=nullptr;
+     BulletState* layers[6]{};BulletState* next_slot=nullptr;i32 bonus_item=0;AnmLoaded* animation=nullptr;
+     void reset()noexcept;
+ };
+-static_assert(sizeof(BulletManagerState)==0x6ba578&&offsetof(BulletManagerState,bullets)==0x1a880&&offsetof(BulletManagerState,next_slot)==0x6ba56c);
++TH_LAYOUT_ASSERT(sizeof(BulletManagerState)==0x6ba578&&offsetof(BulletManagerState,bullets)==0x1a880&&offsetof(BulletManagerState,next_slot)==0x6ba56c);
+ }
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/BulletTemplates.hpp b/game/BulletTemplates.hpp
+--- a/game/BulletTemplates.hpp	2026-09-29 19:01:51.535165158 +0000
++++ b/game/BulletTemplates.hpp	2026-09-29 19:02:00.789136115 +0000
+@@ -4,7 +4,7 @@
+ struct BulletTemplate {
+     AnmVm animation[5];Vec3 hitbox;u8 reserved_d40=0,height=0,layer=0,padding=0;
+ };
+-static_assert(sizeof(BulletTemplate)==0xd44&&offsetof(BulletTemplate,hitbox)==0xd34);
++TH_LAYOUT_ASSERT(sizeof(BulletTemplate)==0xd44&&offsetof(BulletTemplate,hitbox)==0xd34);
+ class BulletTemplates {
+ public:
+     BulletTemplate types[32];
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/EclVm.hpp b/game/EclVm.hpp
+--- a/game/EclVm.hpp	2026-09-29 19:01:51.535788712 +0000
++++ b/game/EclVm.hpp	2026-09-29 19:02:00.789284269 +0000
+@@ -103,7 +103,7 @@
+         return nullptr;
+     }
+ };
+-static_assert(sizeof(EclContext)<=0x24b0);
++TH_LAYOUT_ASSERT(sizeof(EclContext)<=0x24b0);
+ struct EclVm {
+     enum class Failure:u8 {None,MissingBoss,MissingAnimation,MissingEnemyActions,MissingEffect,MissingSceneActions,MissingNativeServices,UnsupportedNativeCallback,MissingSpellServices};Failure failure=Failure::None;
+     using Interpolation=EclContext::Interpolation;
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/EffectState.hpp b/game/EffectState.hpp
+--- a/game/EffectState.hpp	2026-09-29 19:01:51.535937382 +0000
++++ b/game/EffectState.hpp	2026-09-29 19:02:00.789354391 +0000
+@@ -14,7 +14,7 @@
+     u8 active,kind,dying;i8 fade_frames;u8 layer,alternative,geometry_dirty,ignore_pause;
+     SpriteVertex* vertices;EffectState* next;
+ };
+-static_assert(sizeof(EffectState)==0x360);
+-static_assert(offsetof(EffectState,position)==0x2a4&&offsetof(EffectState,age)==0x338);
+-static_assert(offsetof(EffectState,update)==0x348&&offsetof(EffectState,vertices)==0x358);
++TH_LAYOUT_ASSERT(sizeof(EffectState)==0x360);
++TH_LAYOUT_ASSERT(offsetof(EffectState,position)==0x2a4&&offsetof(EffectState,age)==0x338);
++TH_LAYOUT_ASSERT(offsetof(EffectState,update)==0x348&&offsetof(EffectState,vertices)==0x358);
+ }
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/EffectSystem.hpp b/game/EffectSystem.hpp
+--- a/game/EffectSystem.hpp	2026-09-29 19:01:51.535969836 +0000
++++ b/game/EffectSystem.hpp	2026-09-29 19:02:00.791423217 +0000
+@@ -11,8 +11,8 @@
+     EffectState objects[654],sentinels[5];EffectState* tails[5];i32 frames;AnmLoaded* base_animation;AnmLoaded* stage_animation;
+     EffectPoolState(){std::memset(this,0,sizeof(*this));}
+ };
+-static_assert(sizeof(EffectPoolState)==0x8b05c&&offsetof(EffectPoolState,objects)==0x1c);
+-static_assert(offsetof(EffectPoolState,sentinels)==0x89f5c&&offsetof(EffectPoolState,frames)==0x8b050);
++TH_LAYOUT_ASSERT(sizeof(EffectPoolState)==0x8b05c&&offsetof(EffectPoolState,objects)==0x1c);
++TH_LAYOUT_ASSERT(offsetof(EffectPoolState,sentinels)==0x89f5c&&offsetof(EffectPoolState,frames)==0x8b050);
+ struct EffectDefinition {i32 script;EffectUpdate update,initialize;};
+ class EffectSystem {
+     AnmExecutor& anm;AnmRenderer& renderer;GameValues& values;u16& replay_flags;
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/GuiState.hpp b/game/GuiState.hpp
+--- a/game/GuiState.hpp	2026-09-29 19:01:51.537521508 +0000
++++ b/game/GuiState.hpp	2026-09-29 19:02:00.791481940 +0000
+@@ -10,7 +10,7 @@
+     u32 colors[4]{},outline_colors[4]{},font_size=0,ignore_wait=0;
+     bool skippable=false;u8 color=0;bool reset_lines=false;u8 next_line=0,portrait=0;bool textbox_visible=false;u8 selected=0,padding=0;
+ };
+-static_assert(sizeof(DialogueState)==0x1570);
++TH_LAYOUT_ASSERT(sizeof(DialogueState)==0x1570);
+ struct GuiFormattedText {Vec3 position;i32 argument=0,display=0;Timer timer;};
+ struct GuiDisplayFlags {u32 lives:2,bombs:2,power:2,graze:2,points:2,time:2,reserved:20;};
+ struct GuiState {
+@@ -28,5 +28,5 @@
+     i32 clear_stage=0,clear_power=0,clear_points=0,clear_graze=0,clear_time=0,clock_increment=0,clear_clock_old=0,clear_clock=0,clear_clock_display=0,clear_clock_delay=0;
+     AnmVm difficulty;
+ };
+-static_assert(sizeof(GuiState)==0x9c&&sizeof(GuiImplState)==0x230b8);
++TH_LAYOUT_ASSERT(sizeof(GuiState)==0x9c&&sizeof(GuiImplState)==0x230b8);
+ }
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/ItemPool.hpp b/game/ItemPool.hpp
+--- a/game/ItemPool.hpp	2026-09-29 19:01:51.537646495 +0000
++++ b/game/ItemPool.hpp	2026-09-29 19:02:00.794244989 +0000
+@@ -6,12 +6,12 @@
+     AnmVm animation;Vec3 position,velocity,target;Timer timer;
+     i8 type=0,active=0,onscreen=0,state=0,max_value=0;u8 padding[3]{};ItemState* next=nullptr;ItemState* previous=nullptr;
+ };
+-static_assert(sizeof(ItemState)==0x2e4&&offsetof(ItemState,type)==0x2d4);
++TH_LAYOUT_ASSERT(sizeof(ItemState)==0x2e4&&offsetof(ItemState,type)==0x2d4);
+ struct ItemPoolState {
+     static constexpr u32 capacity=2096;ItemState items[capacity+1];i32 next_index=0;u32 count=0;ItemState head;ItemState* tail=nullptr;
+     void reset(){std::memset(this,0,sizeof(*this));tail=&head;}
+ };
+-static_assert(sizeof(ItemPoolState)==0x17b094&&offsetof(ItemPoolState,next_index)==0x17ada4);
++TH_LAYOUT_ASSERT(sizeof(ItemPoolState)==0x17b094&&offsetof(ItemPoolState,next_index)==0x17ada4);
+ struct ItemPoolActions {
+     virtual ~ItemPoolActions()=default;
+     virtual void animation(AnmVm&,i32 script)=0;
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/MidiPlayer.hpp b/game/MidiPlayer.hpp
+--- a/game/MidiPlayer.hpp	2026-09-29 19:01:51.538211449 +0000
++++ b/game/MidiPlayer.hpp	2026-09-29 19:02:00.790907829 +0000
+@@ -7,7 +7,7 @@
+ struct MidiChannel {u8 keys[16]{},instrument=0,bank=0,pan=0,reverb=0,chorus=0,volume=0,modified_volume=0;};
+ static_assert(sizeof(MidiChannel)==23);
+ struct MidiTrackState {i32 playing=0,next=0;u32 length=0;u8 opcode=0,padding[3]{};u8* data=nullptr;u8* cursor=nullptr;u8* loop=nullptr;u32 loop_tick=0;};
+-static_assert(sizeof(MidiTrackState)==32);
++TH_LAYOUT_ASSERT(sizeof(MidiTrackState)==32);
+ struct MidiDeviceSink {
+     virtual ~MidiDeviceSink()=default;
+     virtual void open()=0;virtual void close()=0;
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/MusicRoom.hpp b/game/MusicRoom.hpp
+--- a/game/MusicRoom.hpp	2026-09-29 19:01:51.538300671 +0000
++++ b/game/MusicRoom.hpp	2026-09-29 19:02:00.794430882 +0000
+@@ -19,7 +19,7 @@
+     TrackDescriptor* tracks=nullptr;
+     AnmVm main,names[31],descriptions[8];
+ };
+-static_assert(sizeof(MusicRoomState)==0x6a28);
++TH_LAYOUT_ASSERT(sizeof(MusicRoomState)==0x6a28);
+ struct MusicRoomContext {
+     u16 keys=0,previous=0;
+     bool scrolling=false,preload=false,software_texturing=false;
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/PlayerBombObjects.hpp b/game/PlayerBombObjects.hpp
+--- a/game/PlayerBombObjects.hpp	2026-09-29 19:01:51.538435608 +0000
++++ b/game/PlayerBombObjects.hpp	2026-09-29 19:02:00.795139591 +0000
+@@ -8,7 +8,7 @@
+     i32 state=0,frame=0;float speed=0,distance=0,angle=0;Vec3 position,history[32],velocity,acceleration;
+     AnmVm animation[8];EffectState* effect=nullptr;Timer timer;DamageRegion *damage=nullptr,*cancel=nullptr;
+ };
+-static_assert(sizeof(PlayerBombObject)==0x16f0&&offsetof(PlayerBombObject,animation)==0x1b8&&offsetof(PlayerBombObject,damage)==0x16e8);
++TH_LAYOUT_ASSERT(sizeof(PlayerBombObject)==0x16f0&&offsetof(PlayerBombObject,animation)==0x1b8&&offsetof(PlayerBombObject,damage)==0x16e8);
+ struct PlayerBombObjects {PlayerBombObject objects[128];Vec3 origin;};
+ struct PlayerBombStartActions {
+     virtual ~PlayerBombStartActions()=default;
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/PlayerOptions.hpp b/game/PlayerOptions.hpp
+--- a/game/PlayerOptions.hpp	2026-09-29 19:01:51.538916228 +0000
++++ b/game/PlayerOptions.hpp	2026-09-29 19:02:00.795264701 +0000
+@@ -7,7 +7,7 @@
+     i32 state=0,pose=0,index=0,reserved2d4=0;float angle=0,shot_angle=0;
+     Timer timer;PlayerOptionKind update=PlayerOptionKind::None;u32 draw=0;
+ };
+-static_assert(sizeof(PlayerOption)==0x2f4&&offsetof(PlayerOption,state)==0x2c8&&offsetof(PlayerOption,timer)==0x2e0);
++TH_LAYOUT_ASSERT(sizeof(PlayerOption)==0x2f4&&offsetof(PlayerOption,state)==0x2c8&&offsetof(PlayerOption,timer)==0x2e0);
+ struct PlayerOptionContext {
+     Vec3 player,history_last,enemy;Timer shooting_timer;i32 direction=0,bomb=0;u16 buttons=0;u8 focused=0,enemy_present=0;
+ };
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/PlayerShots.hpp b/game/PlayerShots.hpp
+--- a/game/PlayerShots.hpp	2026-09-29 19:01:51.539134944 +0000
++++ b/game/PlayerShots.hpp	2026-09-29 19:02:00.795437591 +0000
+@@ -9,7 +9,7 @@
+     u8 focused=0,reserved46d=0;i16 animation_index=0;u8 gauge_bonus=0,reserved471[3]{};
+     ShotUpdate update=ShotUpdate::None;ShotDraw draw=ShotDraw::None;ShotHit hit=ShotHit::None;const ShotDefinition* definition=nullptr;
+ };
+-static_assert(sizeof(PlayerShot)==0x484&&offsetof(PlayerShot,timer)==0x454&&offsetof(PlayerShot,definition)==0x480);
++TH_LAYOUT_ASSERT(sizeof(PlayerShot)==0x484&&offsetof(PlayerShot,timer)==0x454&&offsetof(PlayerShot,definition)==0x480);
+ struct PlayerLaserSlot {Timer timer;PlayerShot* shot=nullptr;};
+ struct PlayerShotsState {
+     PlayerShot shots[128];PlayerLaserSlot lasers[3];const ShotDefinition* laser_definitions[3]{};
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/ScreenEffects.hpp b/game/ScreenEffects.hpp
+--- a/game/ScreenEffects.hpp	2026-09-29 19:01:51.540057332 +0000
++++ b/game/ScreenEffects.hpp	2026-09-29 19:02:00.796649813 +0000
+@@ -16,7 +16,7 @@
+     i32 a=0,b=0,c=0,phase=0;
+     Timer timer;
+ };
+-static_assert(sizeof(ScreenEffectState)==0x34);
++TH_LAYOUT_ASSERT(sizeof(ScreenEffectState)==0x34);
+ struct ScreenEffectContext {
+     FrameTiming timing;
+     bool paused=false,retry=false,frozen=false,shake_disabled=false,terminating=false;
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/SpellState.hpp b/game/SpellState.hpp
+--- a/game/SpellState.hpp	2026-09-29 19:01:51.540415405 +0000
++++ b/game/SpellState.hpp	2026-09-29 19:02:00.797236018 +0000
+@@ -17,5 +17,5 @@
+     void end_player_announcement(){spell_vms[6].pendingInterrupt=1;spell_vms[10].pendingInterrupt=2;}
+     void end_enemy_announcement(){spell_vms[7].pendingInterrupt=1;spell_vms[11].pendingInterrupt=2;if(!(spell_flags&1024))spell_vms[13].pendingInterrupt=2;}
+ };
+-static_assert(sizeof(SpellState)==0x2640&&offsetof(SpellState,spell_effect)==0xf4&&offsetof(SpellState,spell_vms)==0x120&&offsetof(SpellState,spell_capture_bonus)==0x2638);
++TH_LAYOUT_ASSERT(sizeof(SpellState)==0x2640&&offsetof(SpellState,spell_effect)==0xf4&&offsetof(SpellState,spell_vms)==0x120&&offsetof(SpellState,spell_capture_bonus)==0x2638);
+ }
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/game/Types.hpp b/game/Types.hpp
+--- a/game/Types.hpp	2026-09-29 19:01:51.541161594 +0000
++++ b/game/Types.hpp	2026-09-29 19:02:00.842124537 +0000
+@@ -11,3 +11,11 @@
+ inline i32 wrapping_add(i32 a,i32 b) noexcept {return signed_bits(u32(a)+u32(b));}
+ inline i32 wrapping_sub(i32 a,i32 b) noexcept {return signed_bits(u32(a)-u32(b));}
+ }
++// Switch port (LP64): byte layouts asserted against the 32-bit original only
++// hold with 4-byte pointers. Structs holding pointers grow on AArch64;
++// nothing in the game reads them by original byte offset.
++#if UINTPTR_MAX==0xffffffffu
++#define TH_LAYOUT_ASSERT(...) static_assert(__VA_ARGS__)
++#else
++#define TH_LAYOUT_ASSERT(...) static_assert(true,"")
++#endif
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/platform/BrowserRuntime.cpp b/platform/BrowserRuntime.cpp
+--- a/platform/BrowserRuntime.cpp	2026-09-29 19:01:51.541522560 +0000
++++ b/platform/BrowserRuntime.cpp	2026-09-29 19:02:00.842590655 +0000
+@@ -11,7 +11,7 @@
+ #endif
+ namespace th08 {
+ namespace {
+-u32 ptr(const void* p){return reinterpret_cast<uintptr_t>(p);}
++
+ PixelSurface surface(TextureRecord& r){auto& i=r.image;return {i.format,i.width,i.height,i.width*TexturePixels::describe(i.format).bytes,i.pixels.data()};}
+ }
+ BrowserRuntime::BrowserRuntime():app(*this,graphics){audio=std::make_unique<GameAudioManager>(*this);text=std::make_unique<AnmText>(app.textures,fonts);app.textures.prepare_callback=[](void*,u32 handle){graphics_device().prepare_texture(handle);};}
+@@ -84,7 +84,7 @@
+ void BrowserRuntime::Graphics::clear_target(u32 flags,u32 color,float depth,u32 stencil){graphics_device().clear(flags,color,depth,stencil);}
+ void BrowserRuntime::flush(){app.renderer.flush();graphics_device().flush();}
+ void BrowserRuntime::readback(u32 h){flush();graphics_device().read(h);}
+-const BrowserTexture* BrowserRuntime::texture(u32 h){const auto* r=app.textures.get(h);if(!r)return nullptr;const auto& i=r->image;texture_result={h,i.width,i.height,i.format,i.width*TexturePixels::describe(i.format).bytes,ptr(i.pixels.data()),u32(i.pixels.size()),r->revision};return &texture_result;}
++const BrowserTexture* BrowserRuntime::texture(u32 h){const auto* r=app.textures.get(h);if(!r)return nullptr;const auto& i=r->image;texture_result={h,i.width,i.height,i.format,i.width*TexturePixels::describe(i.format).bytes,const_cast<u8*>(i.pixels.data()),u32(i.pixels.size()),r->revision};return &texture_result;}
+ void BrowserRuntime::begin_frame(){}
+ bool BrowserRuntime::present(){flush();captured=false;const bool presented=graphics_device().present(back);finish_capture();return presented&&!capture_failed;}
+ void BrowserRuntime::discard_graphics(){app.renderer.clear();graphics_device().discard();}
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/platform/BrowserRuntime.hpp b/platform/BrowserRuntime.hpp
+--- a/platform/BrowserRuntime.hpp	2026-09-29 19:01:51.541544842 +0000
++++ b/platform/BrowserRuntime.hpp	2026-09-29 19:02:00.842305530 +0000
+@@ -3,9 +3,10 @@
+ #include "../game/AnmText.hpp"
+ #include <map>
+ #include "ResourceManager.hpp"
+-#include "../../../portable/input/MotionTrack.hpp"
++#include "../portable/input/MotionTrack.hpp"
+ namespace th08 {
+-struct BrowserTexture {u32 handle,width,height,format,pitch,data,size,revision;};
++// Switch port: data is a real pointer (was a 32-bit wasm address).
++struct BrowserTexture {u32 handle,width,height,format,pitch;u8* data;u32 size,revision;};
+ class GameAudioManager;
+ class BrowserRuntime:public ApplicationPlatform {
+     struct Graphics:SpriteBackend {
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/portable/sdl/Renderer.cpp b/portable/sdl/Renderer.cpp
+--- a/portable/sdl/Renderer.cpp	2026-09-29 19:01:51.545348554 +0000
++++ b/portable/sdl/Renderer.cpp	2026-09-29 19:02:00.846893970 +0000
+@@ -1,17 +1,20 @@
+ #include "Renderer.hpp"
+ #include "Shaders.hpp"
+ #include "ResampleShader.hpp"
+-#include <emscripten.h>
+ #include <algorithm>
+ #include <cmath>
+ #include <cstring>
+ #include <cstdio>
+ #include <cstdlib>
+ 
+-EM_JS(int, touhou_clip_control, (), {
+-  const e=GL.currentContext.GLctx.getExtension('EXT_clip_control');
+-  if(e)e.clipControlEXT(e.LOWER_LEFT_EXT,e.ZERO_TO_ONE_EXT);return !!e;
+-});
++// Switch port: EXT_clip_control through the GLES extension loader instead
++// of WebGL. Absent -> the shader keeps the [-1,1] depth remap.
++static int touhou_clip_control(){
++ const char* list=reinterpret_cast<const char*>(glGetString(GL_EXTENSIONS));
++ if(!list||!std::strstr(list,"GL_EXT_clip_control"))return 0;
++ using ClipControl=void(*)(GLenum,GLenum);auto clip=reinterpret_cast<ClipControl>(SDL_GL_GetProcAddress("glClipControlEXT"));
++ if(!clip)return 0;clip(0x8CA1/*LOWER_LEFT*/,0x935F/*ZERO_TO_ONE*/);return glGetError()==GL_NO_ERROR;
++}
+ namespace touhou::sdl {
+ namespace {
+ Renderer* active=nullptr;
+@@ -38,12 +41,19 @@
+ State::State(){for(auto& m:matrix)m=identity;}
+ Renderer::Renderer(int v,Resolve r,void* p):version(v),resolve(r),owner(p){}
+ bool Renderer::initialize(){
+- if(!SDL_Init(SDL_INIT_VIDEO|SDL_INIT_EVENTS)){failure=SDL_GetError();return false;}
++ // Switch port: SDL2 window. Horizon gives one 1280x720 (handheld/docked)
++ // surface; desktop test builds open a resizable 960x720 window.
++ if(SDL_InitSubSystem(SDL_INIT_VIDEO|SDL_INIT_EVENTS)!=0){failure=SDL_GetError();return false;}
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,SDL_GL_CONTEXT_PROFILE_ES);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION,3);SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,0);
++ SDL_GL_SetAttribute(SDL_GL_RED_SIZE,8);SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE,8);SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,8);
+  SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE,0);SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,0);SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE,0);SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
+- window=SDL_CreateWindow(version==8?"Touhou 08":"Touhou 10",640,480,SDL_WINDOW_OPENGL);if(!window){failure=SDL_GetError();return false;}
+- SDL_SetWindowSize(window,640,480);
+- context=SDL_GL_CreateContext(window);if(!context){failure=SDL_GetError();return false;}SDL_GL_SetSwapInterval(1);drawState=DrawStateCache{};
++#ifdef __SWITCH__
++ window=SDL_CreateWindow(title?title:"Touhou",SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,1280,720,SDL_WINDOW_OPENGL|SDL_WINDOW_FULLSCREEN);
++#else
++ window=SDL_CreateWindow(title?title:"Touhou",SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,960,720,SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE);
++#endif
++ if(!window){failure=SDL_GetError();return false;}
++ context=SDL_GL_CreateContext(window);if(!context){failure=SDL_GetError();return false;}SDL_GL_MakeCurrent(window,context);SDL_GL_SetSwapInterval(1);drawState=DrawStateCache{};
+  std::string source=vertexSource;if(version==10&&touhou_clip_control()){replace(source,"position.z*2.0-1.0","position.z");replace(source,"gl_Position.z=gl_Position.z*2.0-gl_Position.w;","");}
+  vertex=shader(GL_VERTEX_SHADER,source);glGenBuffers(1,&vertices.id);glGenBuffers(1,&indices.id);glGenBuffers(1,&instances.id);
+  glActiveTexture(GL_TEXTURE0);buildingGeneric=true;select(State{});generic=*program;programs.clear();buildingGeneric=false;
+@@ -60,7 +70,7 @@
+  glGenVertexArrays(1,&resampleVao);glGenTextures(1,&weightTexture);
+  warming=false;set_current(this);return true;
+ }
+-Renderer::~Renderer(){discard();for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);if(context)SDL_GL_DestroyContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;SDL_Quit();}
++Renderer::~Renderer(){discard();for(auto& [id,g]:surfaces){glDeleteTextures(1,&g.texture);glDeleteFramebuffers(1,&g.framebuffer);}for(auto& [id,d]:depths)glDeleteRenderbuffers(1,&d.buffer);for(auto& [k,p]:programs)glDeleteProgram(p.id);glDeleteProgram(resampleProgram);glDeleteVertexArrays(1,&resampleVao);glDeleteTextures(1,&weightTexture);glDeleteProgram(generic.id);for(auto& entry:layouts)glDeleteVertexArrays(1,&entry.second);glDeleteShader(vertex);glDeleteBuffers(1,&vertices.id);glDeleteBuffers(1,&indices.id);glDeleteBuffers(1,&instances.id);if(context)SDL_GL_DeleteContext(context);if(window)SDL_DestroyWindow(window);if(active==this)active=nullptr;}
+ void Renderer::bind_texture(GLuint id){if(boundTexture!=id){glBindTexture(GL_TEXTURE_2D,id);boundTexture=id;++stats.textureBinds;}}
+ void Renderer::bind_framebuffer(GLenum target,GLuint id){
+  const bool read=target!=GL_DRAW_FRAMEBUFFER,draw=target!=GL_READ_FRAMEBUFFER;
+@@ -224,15 +234,17 @@
+ }
+ void Renderer::release(u32 id){flush();auto d=depths.find(id);if(d!=depths.end()){glDeleteRenderbuffers(1,&d->second.buffer);depths.erase(d);}auto it=surfaces.find(id);if(it==surfaces.end())return;glDeleteTextures(1,&it->second.texture);glDeleteFramebuffers(1,&it->second.framebuffer);surfaces.erase(it);boundTexture=readFramebuffer=drawFramebuffer=~0u;}
+ void Renderer::present(u32 id){flush();pending=id;stats.frames++;if(!defer)commit();}
+-bool Renderer::commit(){if(!pending)return false;auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);glBlitFramebuffer(0,0,s.width,s.height,0,480,640,0,GL_COLOR_BUFFER_BIT,GL_NEAREST);SDL_GL_SwapWindow(window);stats.presentations++;return true;}
++bool Renderer::commit(){
++ if(!pending)return false;auto s=resolve(owner,pending);auto& g=surface(pending);pending=0;
++ // Switch port: aspect-correct upscale of the 640x480 frame, centred with
++ // pure black (#000000) bars - OLED friendly, same as the other ports.
++ int dw=0,dh=0;SDL_GL_GetDrawableSize(window,&dw,&dh);if(dw<=0||dh<=0){dw=640;dh=480;}
++ int pw=dw,ph=dw*3/4;if(ph>dh){ph=dh;pw=dh*4/3;}const int px=(dw-pw)/2,py=(dh-ph)/2;
++ picture={px,py,pw,ph,dw,dh};
++ bind_framebuffer(GL_DRAW_FRAMEBUFFER,0);glDisable(GL_SCISSOR_TEST);glColorMask(true,true,true,true);drawState.pipeline.colorMask=15;
++ glViewport(0,0,dw,dh);drawState.has_viewport=false;glClearColor(0,0,0,1);glClear(GL_COLOR_BUFFER_BIT);
++ bind_framebuffer(GL_READ_FRAMEBUFFER,g.framebuffer);
++ glBlitFramebuffer(0,0,s.width,s.height,px,py+ph,px+pw,py,GL_COLOR_BUFFER_BIT,pw==int(s.width)&&ph==int(s.height)?GL_NEAREST:GL_LINEAR);
++ SDL_GL_SwapWindow(window);stats.presentations++;return true;
+ }
+-extern "C" {
+-const touhou::sdl::Statistics* sdl_stats(){static touhou::sdl::Statistics zero{};return touhou::sdl::current()?&touhou::sdl::current()->stats:&zero;}
+-void sdl_defer(int enabled){if(auto* r=touhou::sdl::current())r->defer=enabled;}
+-int sdl_commit(){return touhou::sdl::current()&&touhou::sdl::current()->commit();}
+-const char* sdl_error(){return touhou::sdl::current()?touhou::sdl::current()->error():SDL_GetError();}
+-int sdl_version(){return SDL_GetVersion();}
+-double sdl_ticks(){return double(SDL_GetTicksNS())/1000000.0;}
+-__attribute__((export_name("sdl_canvas"))) void sdl_canvas(const char* selector){SDL_SetHint(SDL_HINT_EMSCRIPTEN_CANVAS_SELECTOR,selector);}
+-__attribute__((export_name("sdl_pump"))) void sdl_pump(){SDL_Event event;while(SDL_PollEvent(&event)){};}
+ }
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/portable/sdl/Renderer.hpp b/portable/sdl/Renderer.hpp
+--- a/portable/sdl/Renderer.hpp	2026-09-29 19:01:51.545373771 +0000
++++ b/portable/sdl/Renderer.hpp	2026-09-29 19:02:00.846931454 +0000
+@@ -1,5 +1,5 @@
+ #pragma once
+-#include <SDL3/SDL.h>
++#include <SDL.h>
+ #include "GraphicsState.hpp"
+ #include <GLES3/gl3.h>
+ #include <array>
+@@ -27,6 +27,7 @@
+     using Resolve=Surface(*)(void*,u32);
+     Statistics stats{};State state{};bool defer=false;
+     Renderer(int version,Resolve,void*);~Renderer();
++    const char* title=nullptr; // Switch port: window title
+     bool initialize();void flush();void discard();bool commit();
+     PipelineState& pipeline() override { return state.pipeline; }
+     void transform(MatrixKind,const void*);void viewport(const Viewport&);
+@@ -37,6 +38,10 @@
+     bool resample(u32,const i32*,u32,const i32*,const float*,u32,u32);
+     void read(u32);void release(u32);void present(u32);void prepare(u32);
+     const char* error()const{return failure.c_str();}
++    // Switch port: 4:3 picture rectangle inside the drawable (pillarboxed),
++    // updated on every present. Used to map touch input back to 640x480.
++    struct Picture {int x=0,y=0,width=640,height=480,drawable_width=640,drawable_height=480;} picture{};
++    SDL_Window* sdl_window()const{return window;}
+     int version;Resolve resolve;void* owner;
+ private:
+     struct GPU {GLuint texture=0,framebuffer=0;u32 version=~0u;bool rendered=false;GLuint attached=~0u;std::array<GLint,4> sampler{};};
+@@ -61,11 +66,3 @@
+ Renderer* current();void set_current(Renderer*);
+ }
+ 
+-extern "C" {
+-__attribute__((export_name("sdl_stats"))) const touhou::sdl::Statistics* sdl_stats();
+-__attribute__((export_name("sdl_defer"))) void sdl_defer(int);
+-__attribute__((export_name("sdl_commit"))) int sdl_commit();
+-__attribute__((export_name("sdl_error"))) const char* sdl_error();
+-__attribute__((export_name("sdl_version"))) int sdl_version();
+-__attribute__((export_name("sdl_ticks"))) double sdl_ticks();
+-}
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/portable/sdl/ResampleShader.hpp b/portable/sdl/ResampleShader.hpp
+--- a/portable/sdl/ResampleShader.hpp	2026-09-29 19:01:51.545387067 +0000
++++ b/portable/sdl/ResampleShader.hpp	2026-09-29 19:02:00.846947786 +0000
+@@ -75,8 +75,8 @@
+   }
+  }else{value=originalPixel(sourceRect.xy+at*sourceRect.zw/destinationRect.zw);}
+  uvec4 mask=uvec4(destinationMask);
+- uvec4 packed=uvec4(channel(value.r,mask.r),channel(value.g,mask.g),channel(value.b,mask.b),channel(value.a,mask.a));
+- outputColor=mix(vec4(1),vec4(packed)/max(vec4(mask),vec4(1)),greaterThan(mask,uvec4(0)));
++ uvec4 quantized=uvec4(channel(value.r,mask.r),channel(value.g,mask.g),channel(value.b,mask.b),channel(value.a,mask.a));
++ outputColor=mix(vec4(1),vec4(quantized)/max(vec4(mask),vec4(1)),greaterThan(mask,uvec4(0)));
+ }
+ )GLSL";
+ }
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/sdl/AudioHost.cpp b/sdl/AudioHost.cpp
+--- a/sdl/AudioHost.cpp	2026-09-29 19:01:51.541713272 +0000
++++ b/sdl/AudioHost.cpp	2026-09-29 19:02:00.854453976 +0000
+@@ -1,54 +1,51 @@
+ #ifdef TH_NATIVE_PLATFORM
+-// The same miniaudio -> SDL stream boundary used by the TH07/TH10 hosts.
++// Switch port of th08_web/cpp/sdl/AudioHost.cpp: the same miniaudio mixer,
++// with SDL2 queued audio instead of an SDL3 stream, and BGM streamed straight
++// out of thbgm.dat (original PCM, loop points from thbgm.fmt) instead of
++// pre-converted OGG files. MIDI mode has no synthesizer on Horizon; WAV music
++// (the default when thbgm.dat is present) is used instead.
+ // MusicControl, MIDI sequencing, fades and SoundEffects remain TH08 owners.
+-#define MA_NO_DEVICE_IO
+-#define MA_NO_RESOURCE_MANAGER
+-#define MA_NO_WAV
+-#define MA_NO_MP3
+-#define MA_NO_FLAC
+-#define MA_NO_ENCODING
+-#define MA_NO_THREADING
+-// File-backed Vorbis supports exact PCM seeks and the original loop boundaries.
+-#include "../../../portable/sdl/third_party/stb_vorbis.h"
+ #define MINIAUDIO_IMPLEMENTATION
+-#include "../../../portable/sdl/third_party/miniaudio.h"
++#include "MiniaudioConfig.hpp"
++#include "BgmStream.hpp"
++#include "Platform.hpp"
+ #include "PlatformHost.hpp"
+ #include "../platform/PlatformDevices.hpp"
+-#include <SDL3/SDL.h>
+-#include <emscripten.h>
++#include <algorithm>
++#include <SDL.h>
+ #include <cmath>
++#include <cstdio>
+ #include <memory>
+-EM_JS(void, th08_midi_event, (int op,const unsigned char* data,unsigned length,unsigned time), {
+-    if(Module['runtimeMidi'])Module['runtimeMidi'](op,data?HEAPU8.slice(data,data+length):null,time);
+-});
+ namespace th08 {
+ namespace {
+ struct Buffer {
+-    WaveFormat format{};std::vector<u8> pcm;ma_audio_buffer data{};ma_decoder decoder{};ma_sound sound{};
+-    bool data_ready=false,decoder_ready=false,sound_ready=false;bool loop=false;u32 cursor=0;std::string name;i32 volume=0,pan=0;
+-    ~Buffer(){if(sound_ready)ma_sound_uninit(&sound);if(data_ready)ma_audio_buffer_uninit(&data);if(decoder_ready)ma_decoder_uninit(&decoder);}
++    WaveFormat format{};std::vector<u8> pcm;ma_audio_buffer data{};host::PcmStream stream;ma_sound sound{};
++    bool data_ready=false,stream_ready=false,sound_ready=false;bool loop=false;u32 cursor=0;std::string name;i32 volume=0,pan=0;
++    ~Buffer(){if(sound_ready)ma_sound_uninit(&sound);if(data_ready)ma_audio_buffer_uninit(&data);if(stream_ready)ma_data_source_uninit(&stream.base);}
+ };
+ struct Audio {
+-    ma_engine engine{};SDL_AudioStream* stream=nullptr;bool ready=false,paused=false,music=true,refill=true;u32 error=0,pumps=0,mixed=0,min_queue=~0u;float rms=0;
+-    std::map<u32,std::unique_ptr<Buffer>> buffers;
++    ma_engine engine{};SDL_AudioDeviceID device=0;bool ready=false,paused=false,music=true,refill=true;u32 error=0,pumps=0,mixed=0,min_queue=~0u;float rms=0;
++    std::map<u32,std::unique_ptr<Buffer>> buffers;FILE* bgm=nullptr;std::vector<char> bgm_buffer;
+     bool initialize(){if(ready)return true;auto config=ma_engine_config_init();config.noDevice=MA_TRUE;config.channels=2;config.sampleRate=44100;config.defaultVolumeSmoothTimeInPCMFrames=0;
+         if(ma_engine_init(&config,&engine)!=MA_SUCCESS){error=1;return false;}
+-        SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"2048");SDL_AudioSpec spec{SDL_AUDIO_F32,2,44100};
+-        if(SDL_InitSubSystem(SDL_INIT_AUDIO))stream=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,nullptr,nullptr);
+-        if(!stream){ma_engine_uninit(&engine);error=2;return false;}ready=true;SDL_ResumeAudioStreamDevice(stream);return true;}
++        if(SDL_InitSubSystem(SDL_INIT_AUDIO)==0){SDL_AudioSpec want{},have{};want.freq=44100;want.format=AUDIO_F32SYS;want.channels=2;want.samples=2048;device=SDL_OpenAudioDevice(nullptr,0,&want,&have,0);}
++        if(!device){ma_engine_uninit(&engine);error=2;host::log("audio: %s",SDL_GetError());return false;}
++        bgm=std::fopen(host::paths().data_file("thbgm.dat").c_str(),"rb");if(bgm){bgm_buffer.resize(64*1024);std::setvbuf(bgm,bgm_buffer.data(),_IOFBF,bgm_buffer.size());}
++        ready=true;SDL_PauseAudioDevice(device,0);return true;}
++    u32 queued()const{return device?SDL_GetQueuedAudioSize(device)/8:0;}
+     bool attach(Buffer& b,ma_data_source* source){if(ma_sound_init_from_data_source(&engine,source,MA_SOUND_FLAG_NO_SPATIALIZATION,nullptr,&b.sound)!=MA_SUCCESS)return false;b.sound_ready=true;return true;}
+     void controls(Buffer& b){ma_sound_set_volume(&b.sound,std::pow(10.f,float(b.volume)/2000.f));ma_sound_set_pan_mode(&b.sound,ma_pan_mode_balance);
+         ma_sound_set_pan(&b.sound,b.pan>=0?1.f-std::pow(10.f,-float(b.pan)/2000.f):std::pow(10.f,float(b.pan)/2000.f)-1.f);}
+-    void pump(){if(!ready||paused)return;auto queued=std::max(0,SDL_GetAudioStreamQueued(stream))/8;min_queue=std::min(min_queue,u32(queued));
++    void pump(){if(!ready||paused)return;auto queued=queued_frames();min_queue=std::min(min_queue,u32(queued));
+         if(!refill&&queued<4096)refill=true;if(!refill)return;if(queued>=6144){refill=false;return;}
+         for(int block=0;block<6&&queued<6144;++block){
+         float pcm[2048]{};ma_uint64 frames=0;if(ma_engine_read_pcm_frames(&engine,pcm,1024,&frames)!=MA_SUCCESS){error=3;return;}
+         double energy=0;for(auto& v:pcm){v=std::clamp(v,-1.f,1.f);energy+=double(v)*v;}rms=std::sqrt(energy/2048);
+-        if(!SDL_PutAudioStreamData(stream,pcm,sizeof(pcm))){error=4;return;}++pumps;mixed+=1024;queued+=1024;
++        if(SDL_QueueAudio(device,pcm,sizeof(pcm))!=0){error=4;return;}++pumps;mixed+=1024;queued+=1024;
+         }if(queued>=6144)refill=false;
+     }
++    i32 queued_frames()const{return i32(queued());}
+ }audio;
+-template<class T>const T& value(u32 p){return *reinterpret_cast<const T*>(p);}
+ }
+ struct SDLSound final:SoundDevice {
+  i32 create_pcm(u32 handle,const WaveFormat& format,const u8* data,u32 size)override{if(!audio.initialize())return -1;
+@@ -59,15 +56,16 @@
+  }
+  i32 music_format(u32 handle,const BgmFormat& f,bool loop)override{if(!audio.initialize())return -1;
+ if(!PcmWave::valid(f.format)||f.intro<0||f.total<=f.intro)return -1;
+-        const std::string name(f.name,strnlen(f.name,16));auto found=audio.buffers.find(handle);
++        const std::string name(f.name,std::find(f.name,f.name+16,'\0'));auto found=audio.buffers.find(handle);
+         if(found!=audio.buffers.end()&&found->second->name==name){found->second->loop=loop;ma_sound_set_looping(&found->second->sound,loop);return 0;}
+         if(name.find('/')!=std::string::npos||name.find('\\')!=std::string::npos||name.find("..")!=std::string::npos)return -1;
++        if(!audio.bgm||f.format.bits!=16||f.format.align!=f.format.channels*2||f.start<0)return -1;
+         auto buf=std::make_unique<Buffer>();buf->format=f.format;buf->name=name;buf->loop=loop;
+-        const auto filename="/music/"+name.substr(0,name.rfind('.'))+".ogg";auto config=ma_decoder_config_init(ma_format_s16,f.format.channels,f.format.rate);
+-        if(ma_decoder_init_file(filename.c_str(),&config,&buf->decoder)!=MA_SUCCESS)return -1;buf->decoder_ready=true;
+-        ma_uint64 length=0;if(ma_decoder_get_length_in_pcm_frames(&buf->decoder,&length)!=MA_SUCCESS||length!=u32(f.total)/f.format.align)return -1;
+-        ma_data_source_set_loop_point_in_pcm_frames(&buf->decoder,u32(f.intro)/f.format.align,length);
+-        if(!audio.attach(*buf,&buf->decoder))return -1;ma_sound_set_looping(&buf->sound,loop);audio.buffers[handle]=std::move(buf);return 0;
++        auto& s=buf->stream;s.file=audio.bgm;s.offset=u32(f.start);s.frames=u32(f.total)/f.format.align;s.channels=f.format.channels;s.rate=f.format.rate;
++        auto config=ma_data_source_config_init();config.vtable=&host::pcm_vtable;
++        if(ma_data_source_init(&config,&s.base)!=MA_SUCCESS)return -1;buf->stream_ready=true;if(host::pcm_seek(&s,0)!=MA_SUCCESS)return -1;
++        ma_data_source_set_loop_point_in_pcm_frames(&s,u32(f.intro)/f.format.align,s.frames);
++        if(!audio.attach(*buf,&s))return -1;ma_sound_set_looping(&buf->sound,loop);audio.buffers[handle]=std::move(buf);return 0;
+  }
+  Buffer* get(u32 id){auto it=audio.buffers.find(id);return it==audio.buffers.end()?nullptr:it->second.get();}
+  i32 stop(u32 id)override{if(!audio.initialize())return -1;if(auto* b=get(id))ma_sound_stop(&b->sound);return 0;}
+@@ -76,17 +74,14 @@
+  i32 volume(u32 id,i32 value)override{if(!audio.initialize())return -1;if(auto* b=get(id)){b->volume=value;audio.controls(*b);}return 0;}
+  i32 play(u32 id,u32,u32 flags)override{if(!audio.initialize())return -1;if(auto* b=get(id)){if(id==1000&&!audio.music)return 0;if(id!=1000){b->loop=flags&1;ma_sound_set_looping(&b->sound,b->loop);}return ma_sound_start(&b->sound)==MA_SUCCESS?0:-1;}return 0;}
+  void release(u32 id)override{if(audio.initialize())audio.buffers.erase(id);}
+- void midi_open()override{th08_midi_event(60,nullptr,0,0);}
+- void midi_close(u32 time)override{th08_midi_event(61,nullptr,0,time);}
+- void midi_message(const u8* data,u32 size,u32 time)override{th08_midi_event(62,data,size,time);}
++ // No MIDI synthesizer on Horizon: MIDI music mode is silent (WAV mode is the default).
++ void midi_open()override{}
++ void midi_close(u32)override{}
++ void midi_message(const u8*,u32,u32)override{}
+ };
+ SoundDevice& sound_device(){static SDLSound sound;return sound;}
+ void sdl_audio_pump(){audio.pump();}
+-void sdl_audio_pause(bool pause){if(audio.paused==pause)return;audio.paused=pause;if(audio.stream){if(pause)SDL_PauseAudioStreamDevice(audio.stream);else SDL_ResumeAudioStreamDevice(audio.stream);}}
+-void sdl_audio_shutdown(){audio.buffers.clear();if(audio.stream)SDL_DestroyAudioStream(audio.stream);audio.stream=nullptr;if(audio.ready)ma_engine_uninit(&audio.engine);audio.ready=false;}
+-extern "C" {
+-__attribute__((export_name("sdl_music_enabled"))) void sdl_music_enabled(u32 on){audio.music=on!=0;}
+-__attribute__((export_name("sdl_audio_stats"))) const u32* sdl_audio_stats(){static u32 out[12];out[0]=audio.ready;out[1]=audio.pumps;out[2]=audio.mixed;out[3]=audio.buffers.size();out[4]=audio.error;out[5]=audio.stream?std::max(0,SDL_GetAudioStreamQueued(audio.stream))/8:0;out[7]=audio.min_queue;std::memcpy(out+10,&audio.rms,4);return out;}
+-}
++void sdl_audio_pause(bool pause){if(audio.paused==pause)return;audio.paused=pause;if(audio.device)SDL_PauseAudioDevice(audio.device,pause?1:0);}
++void sdl_audio_shutdown(){audio.buffers.clear();if(audio.device)SDL_CloseAudioDevice(audio.device);audio.device=0;if(audio.ready)ma_engine_uninit(&audio.engine);audio.ready=false;if(audio.bgm)std::fclose(audio.bgm);audio.bgm=nullptr;}
+ }
+ #endif
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/sdl/FileHost.cpp b/sdl/FileHost.cpp
+--- a/sdl/FileHost.cpp	2026-09-29 19:01:51.541734736 +0000
++++ b/sdl/FileHost.cpp	2026-09-29 19:02:00.858594151 +0000
+@@ -1,23 +1,28 @@
++// Switch port of th08_web/cpp/sdl/FileHost.cpp: stdio instead of SDL IO /
++// IDBFS. th08.dat is read in place; saves (score.dat, th08.cfg, replays) live
++// next to the data on the SD card, like the PC release. thbgm.dat is no
++// longer copied into memory (it is ~150 MB): only its header is registered
++// for the game's WAV-mode check, and AudioHost streams music from the file.
+ #ifdef TH_NATIVE_PLATFORM
+ #include "PlatformHost.hpp"
++#include "Platform.hpp"
+ #include "../platform/PlatformDevices.hpp"
+-#include <SDL3/SDL.h>
+-#include <emscripten.h>
+ #include <dirent.h>
+ #include <ctime>
+ #include <cctype>
++#include <cstdio>
+ #define STB_IMAGE_IMPLEMENTATION
+ #define STBI_NO_STDIO
+-#include "../../../portable/sdl/third_party/stb_image.h"
+-EM_JS(void, th08_save_changed, (), { if(Module['runtimeFileChanged'])Module['runtimeFileChanged'](); });
+-EM_JS(void, th08_replay_error, (), { if(Module['runtimeNotice'])Module['runtimeNotice']('无法读取这份永夜抄录像。'); });
++#include "../portable/sdl/third_party/stb_image.h"
+ namespace th08 {
+ namespace {
+ struct ArchiveFile final:ArchiveSource {
+-    SDL_IOStream* file=SDL_IOFromFile("/game/th08.dat","rb");
+-    ~ArchiveFile(){if(file)SDL_CloseIO(file);}
+-    u32 size()const override{const auto n=file?SDL_GetIOSize(file):-1;return n>0&&n<=128*1024*1024?u32(n):0;}
+-    bool read(u32 offset,u8* bytes,u32 count)override{return file&&SDL_SeekIO(file,offset,SDL_IO_SEEK_SET)==offset&&SDL_ReadIO(file,bytes,count)==count;}
++    FILE* file=nullptr;std::vector<char> buffer;u32 length=0;
++    ArchiveFile(){file=std::fopen(host::paths().data_file("th08.dat").c_str(),"rb");
++        if(file){buffer.resize(256*1024);std::setvbuf(file,buffer.data(),_IOFBF,buffer.size());std::fseek(file,0,SEEK_END);const long n=std::ftell(file);length=n>0&&n<=128*1024*1024?u32(n):0;}}
++    ~ArchiveFile(){if(file)std::fclose(file);}
++    u32 size()const override{return length;}
++    bool read(u32 offset,u8* bytes,u32 count)override{return file&&std::fseek(file,long(offset),SEEK_SET)==0&&std::fread(bytes,1,count,file)==count;}
+ };
+ bool save_name(const std::string& name){
+     if(name=="score.dat"||name=="th08.cfg")return true;
+@@ -26,14 +31,19 @@
+     for(char c:id)if(!std::isalnum(static_cast<unsigned char>(c)))return false;return true;
+ }
+ }
+-bool sdl_read_file(const char* name,std::vector<u8>& result){size_t size=0;auto* p=SDL_LoadFile(name,&size);if(!p)return false;result.assign(static_cast<u8*>(p),static_cast<u8*>(p)+size);SDL_free(p);return true;}
++bool sdl_read_file(const char* name,std::vector<u8>& result){return host::read_file(name,result,256u*1024*1024);}
+ bool sdl_load_assets(BrowserRuntime& r){
+-    std::vector<u8> bytes;if(!r.mount_archive(std::make_unique<ArchiveFile>())||!r.native_fonts())return false;
+-    if(!sdl_read_file("/game/thbgm.dat",bytes)||!r.put("thbgm.dat",bytes.data(),bytes.size()))return false;
+-    for(const auto* directory:{"/savesth08","/savesth08/replay"}){
+-        auto* dir=opendir(directory);if(!dir)continue;while(auto* entry=readdir(dir)){
+-            const auto relative=std::string(directory==std::string("/savesth08")?"":"replay/")+entry->d_name;
+-            if(save_name(relative)&&sdl_read_file((std::string(directory)+"/"+entry->d_name).c_str(),bytes))r.put(relative.c_str(),bytes.data(),bytes.size());
++    std::vector<u8> bytes;if(!r.mount_archive(std::make_unique<ArchiveFile>())){host::log("th08.dat could not be mounted");return false;}
++    if(!r.native_fonts()){host::log("font tables failed");return false;}
++    // Only the 16-byte ZWAV header: GameConfiguration picks WAV music when it
++    // is valid. The PCM itself is streamed by AudioHost.
++    if(FILE* f=std::fopen(host::paths().data_file("thbgm.dat").c_str(),"rb")){u8 header[16]{};const bool ok=std::fread(header,1,16,f)==16;std::fclose(f);if(ok&&!r.put("thbgm.dat",header,16))return false;}
++    else host::log("thbgm.dat not found, music disabled");
++    const auto root=host::paths().save;host::make_directory(root);host::make_directory(root+"/replay");
++    for(const auto* sub:{"","replay"}){
++        const auto directory=*sub?root+"/"+sub:root;auto* dir=opendir(directory.c_str());if(!dir)continue;while(auto* entry=readdir(dir)){
++            const auto relative=std::string(*sub?"replay/":"")+entry->d_name;
++            if(save_name(relative)&&sdl_read_file((directory+"/"+entry->d_name).c_str(),bytes))r.put(relative.c_str(),bytes.data(),bytes.size());
+         }closedir(dir);
+     }
+     GameConfiguration configuration;const auto config=r.read("th08.cfg"),wave=r.read_prefix("thbgm.dat",16);
+@@ -43,22 +53,20 @@
+ bool sdl_prepare_asset(BrowserRuntime& r,u32 index){
+     if(index>=r.resources().size())return false;const auto& name=r.resources()[index].name;const auto& bytes=r.file(name.c_str());
+     if(bytes.empty()&&r.resources()[index].size)return false;
+-    const auto dot=name.rfind('.');const auto ext=dot==std::string::npos?"":name.substr(dot);
+     // Endings are not expanded into dozens of RGBA images at startup. Their
+     // compressed source stays available and is decoded when the scene needs it.
+     if(name=="title00.png"||name=="select00.png"||name=="music.jpg"||name=="th08logo.jpg")return sdl_decode_image(r,name.c_str(),bytes);
+     if(name=="title01.anm"||name=="resulttext.anm"||name=="result00.anm"||name=="music00.anm")return r.app.library.preload(bytes.data(),bytes.size());
+     return true;
+ }
+-bool sdl_decode_image(BrowserRuntime& r,const char* name,const std::vector<u8>& bytes){int width=0,height=0,channels=0;auto* rgba=stbi_load_from_memory(bytes.data(),bytes.size(),&width,&height,&channels,4);if(!rgba)return false;
++bool sdl_decode_image(BrowserRuntime& r,const char* name,const std::vector<u8>& bytes){int width=0,height=0,channels=0;auto* rgba=stbi_load_from_memory(bytes.data(),int(bytes.size()),&width,&height,&channels,4);if(!rgba)return false;
+     const bool result=r.put_image(name,width,height,rgba,u32(width)*height*4);stbi_image_free(rgba);return result;}
+ struct SDLFiles final:FileDevice {
+  bool save(const char* path,const u8* bytes,u32 size)override{const auto name=BrowserRuntime::path(path);if(!save_name(name))return false;
+-    auto* stream=SDL_IOFromFile(("/savesth08/"+name).c_str(),"wb");if(!stream)return false;
+-    const auto written=SDL_WriteIO(stream,bytes,size);const bool closed=SDL_CloseIO(stream);if(written!=size||!closed)return false;th08_save_changed();return true;}
++    const bool ok=host::write_file(host::paths().save_file(name.c_str()),bytes,size);if(!ok)host::log("could not save %s",name.c_str());return ok;}
+  void calendar(char* date,char* stamp)override{const auto now=std::time(nullptr);const auto* local=std::localtime(&now);if(!local)return;std::strftime(date,6,"%m/%d",local);std::strftime(stamp,20,"%y/%m/%d %H:%M:%S",local);}
+  u32 milliseconds()override{return sdl_game_time();}u16 supplemental_input()override{return 0;}
+- void replay_error()override{th08_replay_error();}
++ void replay_error()override{host::log("replay could not be read");}
+ };
+ FileDevice& file_device(){static SDLFiles files;return files;}
+ 
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/sdl/FontHost.cpp b/sdl/FontHost.cpp
+--- a/sdl/FontHost.cpp	2026-09-29 19:01:51.541752741 +0000
++++ b/sdl/FontHost.cpp	2026-09-29 19:02:00.862786818 +0000
+@@ -1,26 +1,68 @@
+ #ifdef TH_NATIVE_PLATFORM
++// Switch port of th08_web/cpp/sdl/FontHost.cpp: SDL3_ttf -> SDL2_ttf.
++// msgothic.ttc next to th08.dat, else the Switch's built-in Japanese font.
++// cp932.bin / blend.bin come from <data>/fonts/ when present (the upstream
++// GDI-derived tables), otherwise they are generated here.
+ #include "PlatformHost.hpp"
+-#include <SDL3/SDL.h>
+-#include <SDL3_ttf/SDL_ttf.h>
++#include "Platform.hpp"
++#include <SDL.h>
++#include <SDL_ttf.h>
++#include <algorithm>
++#include <cmath>
+ #include <set>
++#ifdef __SWITCH__
++#include <switch.h>
++#endif
+ namespace th08 {
+-namespace {std::map<std::pair<i32,i32>,TTF_Font*> faces;bool started=false;}
++namespace {std::map<std::pair<i32,i32>,TTF_Font*> faces;bool started=false;
++#include "cp932_table.inc" // generated by scripts/gen_cp932.py: cp932_map[65536]
++TTF_Font* open_font(i32 height){
++    const auto path=host::paths().data_file("msgothic.ttc");
++    if(host::exists(path))return TTF_OpenFont(path.c_str(),height);
++#ifdef __SWITCH__
++    static bool tried=false;static PlFontData shared{};
++    if(!tried){tried=true;if(R_FAILED(plInitialize(PlServiceType_User))||R_FAILED(plGetSharedFontByType(&shared,PlSharedFontType_Standard)))shared.address=nullptr;}
++    if(shared.address)return TTF_OpenFontRW(SDL_RWFromConstMem(shared.address,int(shared.size)),1,height);
++    return nullptr;
++#else
++    for(const char* c:{"/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc","/usr/share/fonts/truetype/fonts-japanese-gothic.ttf"})if(host::exists(c))return TTF_OpenFont(c,height);
++    return nullptr;
++#endif
++}
++}
+ bool sdl_glyph(i32 height,i32 weight,u16 code,JapaneseFont::Glyph& glyph,std::vector<u8>& pixels){
+-    if(!started){if(!TTF_Init())return false;started=true;}
+-    auto& face=faces[{height,weight}];if(!face){face=TTF_OpenFont("/fonts/msgothic.ttc",float(height));if(!face)return false;
+-        TTF_SetFontKerning(face,false);TTF_SetFontHinting(face,TTF_HINTING_NORMAL);if(weight>=600)TTF_SetFontStyle(face,TTF_STYLE_BOLD);}
++    if(!started){if(TTF_Init()!=0)return false;started=true;}
++    auto& face=faces[{height,weight}];if(!face){face=open_font(height);if(!face)return false;
++        TTF_SetFontKerning(face,0);TTF_SetFontHinting(face,TTF_HINTING_NORMAL);if(weight>=600)TTF_SetFontStyle(face,TTF_STYLE_BOLD);}
+     int left,right,bottom,top,advance;
+-    if(!TTF_GetGlyphMetrics(face,code,&left,&right,&bottom,&top,&advance))return false;
+-    auto* image=TTF_RenderGlyph_Blended(face,code,{255,255,255,255});if(!image)return false;
+-    auto* rgba=SDL_ConvertSurface(image,SDL_PIXELFORMAT_RGBA32);SDL_DestroySurface(image);if(!rgba)return false;
+-    // SDL glyph surfaces already include the font's baseline placement.
+-    glyph={code,0,i16(advance),0,0,u16(rgba->w),u16(rgba->h)};pixels.resize(size_t(rgba->w)*rgba->h);
+-    const auto* data=static_cast<const u8*>(rgba->pixels);for(int y=0;y<rgba->h;y++)for(int x=0;x<rgba->w;x++)pixels[y*rgba->w+x]=(u32(data[y*rgba->pitch+x*4+3])*15+127)/255;
+-    SDL_DestroySurface(rgba);return true;
++    if(TTF_GlyphMetrics32(face,code,&left,&right,&bottom,&top,&advance)!=0)return false;
++    auto* image=TTF_RenderGlyph32_Blended(face,code,{255,255,255,255});if(!image)return false;
++    auto* rgba=SDL_ConvertSurfaceFormat(image,SDL_PIXELFORMAT_RGBA32,0);SDL_FreeSurface(image);if(!rgba)return false;
++    // SDL glyph surfaces already include the font's baseline placement. Switch
++    // port: fonts other than MS Gothic (the system-font fallback) have taller
++    // line metrics; drop the rows above MS Gothic's ascent (220/256 em) and keep
++    // one em, MS Gothic's cell height.
++    const i32 skip=std::clamp(TTF_FontAscent(face)-i32(std::lround(height*220.0/256.0)),0,rgba->h);const i32 rows=std::min(rgba->h-skip,height);
++    glyph={code,0,i16(advance),0,0,u16(rgba->w),u16(rows)};pixels.resize(size_t(rgba->w)*rows);
++    const auto* data=static_cast<const u8*>(rgba->pixels)+skip*rgba->pitch;for(int y=0;y<rows;y++)for(int x=0;x<rgba->w;x++)pixels[y*rgba->w+x]=(u32(data[y*rgba->pitch+x*4+3])*15+127)/255;
++    SDL_FreeSurface(rgba);return true;
+ }
+ void sdl_fonts_shutdown(){for(auto& face:faces)TTF_CloseFont(face.second);faces.clear();if(started)TTF_Quit();started=false;}
+-bool BrowserRuntime::native_fonts(){std::vector<u8> bytes;if(!sdl_read_file("/fonts/cp932.bin",bytes)||!put_font(0,bytes.data(),bytes.size()))return false;
+-    return sdl_read_file("/fonts/blend.bin",bytes)&&put_font(1,bytes.data(),bytes.size());}
++bool BrowserRuntime::native_fonts(){
++    const auto dir=host::paths().data_file("fonts");std::vector<u8> bytes;
++    if(!sdl_read_file((dir+"/cp932.bin").c_str(),bytes)||bytes.size()!=131072){bytes.resize(131072);std::memcpy(bytes.data(),cp932_map,131072);}
++    if(!put_font(0,bytes.data(),u32(bytes.size())))return false;
++    if(!sdl_read_file((dir+"/blend.bin").c_str(),bytes)||bytes.size()!=131072){
++        // [coverage 0..15][destination 5-bit channel][text 8-bit channel] ->
++        // 5-bit result: coverage-weighted mix of the ARGB1555 target and text.
++        bytes.resize(131072);
++        for(u32 a=0;a<16;++a)for(u32 before=0;before<32;++before)for(u32 text=0;text<256;++text)
++            bytes[a*8192+before*256+text]=u8(std::lround(before*(15.0-a)/15.0+text*31.0/255.0*a/15.0));
++    }
++    if(!put_font(1,bytes.data(),u32(bytes.size())))return false;
++    if(!started){if(TTF_Init()!=0)return false;started=true;}
++    if(auto* probe=open_font(16)){TTF_CloseFont(probe);return true;}
++    host::log("No Japanese font: copy msgothic.ttc (from Windows) next to th08.dat");return false;}
+ u32 BrowserRuntime::native_font_steps(){
+     if(warm_glyphs.empty()){std::set<u16> codes;for(u16 code=32;code<127;code++)codes.insert(code);
+         const auto text=read("musiccmt.txt");const auto* p=text.data();const auto* end=p+text.size();while(p<end){const auto code=fonts.encoding.next(p,end);if(code>=32)codes.insert(code);}
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/sdl/GraphicsHost.cpp b/sdl/GraphicsHost.cpp
+--- a/sdl/GraphicsHost.cpp	2026-09-29 19:01:51.541785934 +0000
++++ b/sdl/GraphicsHost.cpp	2026-09-29 19:02:00.869473891 +0000
+@@ -13,11 +13,15 @@
+ std::unique_ptr<touhou::sdl::Renderer> gpu;BrowserRuntime* runtime=nullptr;
+ std::map<u32,touhou::sdl::Surface> known;bool capture_checked=false,capture_exact=false,capture_testing=false;u32 capture_mismatches=0;
+ touhou::sdl::Surface resolve(void*,u32 h){if(h==0xffffffff)return {h,640,480,touhou::graphics::PixelFormat::Depth16,0,nullptr,0,0};
+- if(const auto* p=runtime->texture(h)){touhou::sdl::Surface s{p->handle,p->width,p->height,touhou::graphics::asset_pixel_format(p->format),p->pitch,reinterpret_cast<u8*>(p->data),p->size,p->revision};known[h]=s;return s;}auto it=known.find(h);return it==known.end()?touhou::sdl::Surface{}:it->second;
++ if(const auto* p=runtime->texture(h)){touhou::sdl::Surface s{p->handle,p->width,p->height,touhou::graphics::asset_pixel_format(p->format),p->pitch,p->data,p->size,p->revision};known[h]=s;return s;}auto it=known.find(h);return it==known.end()?touhou::sdl::Surface{}:it->second;
+ }
++#ifndef TH_NATIVE_PLATFORM
+ template<class T=u32>T* ptr(u32 p){return reinterpret_cast<T*>(uintptr_t(p));}
++#endif
+ }
+-bool sdl_attach(BrowserRuntime* r){runtime=r;known.clear();capture_checked=capture_exact=capture_testing=false;capture_mismatches=0;gpu=std::make_unique<touhou::sdl::Renderer>(8,resolve,nullptr);return gpu->initialize();}
++bool sdl_attach(BrowserRuntime* r){runtime=r;known.clear();capture_checked=capture_exact=capture_testing=false;capture_mismatches=0;gpu=std::make_unique<touhou::sdl::Renderer>(8,resolve,nullptr);gpu->title="Touhou 8: Imperishable Night";return gpu->initialize();}
++// Switch port: picture rectangle for touch mapping and the snapshot key.
++touhou::sdl::Renderer* sdl_renderer(){return gpu.get();}
+ void sdl_detach(){gpu.reset();runtime=nullptr;known.clear();}
+ struct SDLGraphics final:ZunGraphics {
+  bool resample(u32 source,const TextureRect& from,u32 target,const TextureRect& to,bool triangle)override{
+@@ -48,7 +52,7 @@
+  }
+  void prepare_texture(u32 handle)override{frame().prepare(handle);}
+  touhou::sdl::Renderer& frame(){auto& g=*gpu;g.state.target=runtime->backbuffer();g.state.depth=0xffffffff;return g;}
+- void flush()override{frame().flush();}void texture(u32 h)override{frame().state.texture=h;}
++ void flush()override{if(gpu)frame().flush();}void texture(u32 h)override{frame().state.texture=h;}
+ #ifdef TH_NATIVE_PLATFORM
+  PipelineState& pipeline()override{return frame().pipeline();}
+  void transform(MatrixParameter kind,const Matrix4& matrix)override{frame().transform(kind,&matrix);}
+@@ -70,7 +74,7 @@
+  }
+  void clear(u32 flags,u32 color,float depth,u32 stencil)override{frame().clear(flags,color,depth,stencil);}
+  bool present(u32 surface)override{auto& g=frame();g.present(surface);for(auto it=known.begin();it!=known.end();){if(!runtime->texture(it->first)){g.release(it->first);it=known.erase(it);}else ++it;}return true;}
+- void read(u32 surface)override{frame().read(surface);}void discard()override{frame().discard();}
++ void read(u32 surface)override{frame().read(surface);}void discard()override{if(gpu)frame().discard();} // Switch port: safe after sdl_detach / failed attach
+  void copy(u32 source,const TextureRect& rect,u32 target,i32 x,i32 y)override{i32 point[]{x,y};frame().copy(source,&rect.left,target,point);}
+ };
+ ZunGraphics& graphics_device(){static SDLGraphics graphics;return graphics;}
+@@ -95,9 +99,6 @@
+  }
+  arithmetic_mode(precision,rounding);capture_testing=false;capture_checked=true;
+ }
+-extern "C" __attribute__((export_name("sdl_capture_validation"))) u32 sdl_capture_validation(){return capture_checked?(capture_exact?1:2):0;}
+-extern "C" __attribute__((export_name("sdl_capture_mismatches"))) u32 sdl_capture_mismatches(){return capture_mismatches;}
+-
+ #ifndef TH_NATIVE_PLATFORM
+ i32 sdl_graphics(u32 op,u32 a,u32 b,u32 c){
+  if(!gpu)return -1;auto& g=*gpu;g.state.target=runtime->backbuffer();g.state.depth=0xffffffff;
+@@ -114,4 +115,3 @@
+ #endif
+ 
+ }
+-extern "C" __attribute__((export_name("sdl_read_back"))) uint32_t sdl_read_back(){auto* g=touhou::sdl::current();if(!g)return 0;auto s=g->resolve(g->owner,g->state.target);g->read(s.handle);return reinterpret_cast<uintptr_t>(s.data);}
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/sdl/GraphicsHost.hpp b/sdl/GraphicsHost.hpp
+--- a/sdl/GraphicsHost.hpp	2026-09-29 19:01:51.541805400 +0000
++++ b/sdl/GraphicsHost.hpp	2026-09-29 19:02:00.873942924 +0000
+@@ -1,3 +1,4 @@
+ #pragma once
+ #include "../platform/BrowserRuntime.hpp"
+-namespace th08 {bool sdl_attach(BrowserRuntime*);void sdl_detach();i32 sdl_graphics(u32,u32,u32,u32);}
++namespace touhou::sdl {class Renderer;}
++namespace th08 {bool sdl_attach(BrowserRuntime*);void sdl_detach();i32 sdl_graphics(u32,u32,u32,u32);touhou::sdl::Renderer* sdl_renderer();}
+diff -ruN '--exclude=touch-bomb-check.cpp' '--exclude=touch-bomb-check.mjs' '--exclude=verify.cpp' '--exclude=verify.mjs' '--exclude=truncate-check.cpp' a/third_party/softfloat.c b/third_party/softfloat.c
+--- a/third_party/softfloat.c	2026-09-29 19:01:51.541848788 +0000
++++ b/third_party/softfloat.c	2026-09-29 19:02:00.843127995 +0000
+@@ -1789,8 +1789,8 @@
+  softfloat_shiftRightJam128( uint64_t a64, uint64_t a0, uint_fast32_t dist );
+ #endif
+ 
++/* Switch port: no self-#define here, so the definitions further down are compiled (a native link needs them). */
+ #ifndef softfloat_shiftRightJam128Extra
+-#define softfloat_shiftRightJam128Extra softfloat_shiftRightJam128Extra
+ /*----------------------------------------------------------------------------
+ | Shifts the 192 bits formed by concatenating 'a64', 'a0', and 'extra' right
+ | by 64 _plus_ the number of bits given in 'dist', which must not be zero.
+@@ -1814,7 +1814,6 @@
+ #endif
+ 
+ #ifndef softfloat_shiftRightJam256M
+-#define softfloat_shiftRightJam256M softfloat_shiftRightJam256M
+ /*----------------------------------------------------------------------------
+ | Shifts the 256-bit unsigned integer pointed to by 'aPtr' right by the number
+ | of bits given in 'dist', which must not be zero.  If any nonzero bits are

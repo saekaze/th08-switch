@@ -1,1 +1,23 @@
-build-switch/
+# --- switch port ---
+# cmake build trees
+build/
+build-*/
+# build products
+*.nro
+*.nro.sha256
+*.nacp
+*.elf
+
+# game data must never be committed
+th08.dat
+thbgm.dat
+msgothic.ttc
+msmincho.ttc
+th08.cfg
+score.dat
+th08_*.rpy
+th8_*.rpy
+fonts/
+fontcache/
+snapshot/
+*.log
