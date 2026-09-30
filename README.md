@@ -40,7 +40,7 @@ Also new in r4:
 * 🎯 **Faithful Arithmetic:** the game's x87 floating-point behaviour is reproduced bit-for-bit with SoftFloat, as upstream does for replay and RNG accuracy.
 * ⬛ **OLED-Friendly Pillarboxing:** the original 640×480 picture is centred with pure black (`#000000`) bars and an aspect-correct upscale.
 * 🔊 **Full Audio:** sound effects plus BGM streamed straight out of your `thbgm.dat` (original 16-bit PCM and loop points — no conversion step).
-* 🎮 **Sane, Remappable Controls:** defaults match the TH10 port; the Switch buttons act as TH08's gamepad, so the in-game **Key Config** can rebind them.
+* 🎮 **Sane, Remappable Controls:** Joy-Con (handheld, grip, detached) and Pro Controller with the same default layout as every other Touhou Switch port (B shoot, A bomb, L/ZL focus, R/ZR skip, + pause); the in-game **Key Config** can rebind them.
 * 👆 **Touch Screen:** in handheld mode, drag to move — upstream's touch controller, mapped through the pillarbox.
 * 🈂️ **Japanese Text:** MS Gothic (`msgothic.ttc`) like the PC game, or the Switch's built-in Japanese font as a fallback.
 * ⏳ **Loading Bar:** start-up shows its progress while the archive, fonts and first animations are prepared.
@@ -79,20 +79,18 @@ Run `touhou8.nro` from the **Homebrew Menu (hbmenu)**, **Sphaira launcher**, or 
 
 ## 🕹 Controls
 
-Defaults (the same layout as the TH10 port):
-
 | Nintendo Switch Button | Action |
 | :--- | :--- |
 | **Left Stick / D-Pad** | Character Movement |
 | **B** | Shoot / Confirm |
 | **A** | Bomb / Cancel |
 | **L / ZL** | Focus (Precision Slow-Motion Movement) |
-| **R / ZR** | Skip Dialogue |
+| **R / ZR** | Skip Dialogue (hold) |
 | **+ (Plus)** | Pause / In-Game Menu |
 | **− (Minus)** | Snapshot (saved to `snapshot/` next to the game data) |
 | **Touch** (handheld) | Drag to move |
 
-Key Config numbers the buttons as: 0 B, 1 A, 2 L/ZL, 3 R/ZR, 4 +, 5 X, 6 Y. The D-Pad and sticks only move — they can never be picked as a button.
+**The same default layout in every Touhou Switch port:** B shoots, A bombs, L/ZL focuses, R/ZR skips dialogue, + pauses. These are only defaults — the Switch buttons act as the game's own gamepad, so the in-game **Key Config** can rebind them, and **Default** there brings this layout back. The D-Pad and sticks only move — they can never be picked as a button. Key Config numbers: 0 B, 1 A, 2 L/ZL, 3 R/ZR, 4 +, 5 X, 6 Y.
 
 ---
 
