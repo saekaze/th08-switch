@@ -5,8 +5,9 @@ Game data and the MS Gothic font are separate original/proprietary assets; the
 source code does not grant a license to those assets, and none are included.
 
 Game code (game/, platform/, portable/) comes from YomotsuHisami/th08 (TH08
-portable 3.4). That repository asserts no blanket license and asks that each
-bundled component keep its own notices; they are reproduced in licenses/:
+portable 3.4). YomotsuHisami's code is MIT-licensed, as the author confirmed
+on GitHub (see ../LICENSE-YomotsuHisami.txt). Bundled components keep their
+own notices; they are reproduced in licenses/:
 - SoftFloat 3e (third_party/softfloat.c): BSD 3-clause, The Regents of the
   University of California (licenses/SoftFloat.txt).
 - TH08 reference code the reconstruction adapts: KSS, MIT (th08-reference-MIT.txt).
