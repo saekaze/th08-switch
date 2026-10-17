@@ -139,8 +139,6 @@ int main(int argc,char** argv){
     using namespace th08;
     host::locate_data(argc,argv);
 #ifdef __SWITCH__
-    // Same CPU boost the other native ports use; the GPU stays with the applet.
-    if(R_SUCCEEDED(clkrstInitialize())){ClkrstSession cpu;if(R_SUCCEEDED(clkrstOpenSession(&cpu,PcvModuleId_CpuBus,3))){clkrstSetClockRate(&cpu,1785000000);clkrstCloseSession(&cpu);}clkrstExit();}
     padConfigureInput(1,HidNpadStyleSet_NpadStandard);padInitializeDefault(&pad);
     appletSetFocusHandlingMode(AppletFocusHandlingMode_SuspendHomeSleep);
 #endif
