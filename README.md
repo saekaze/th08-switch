@@ -9,7 +9,7 @@ A native homebrew port of ZUN's 2004 danmaku classic **Touhou 8: Imperishable Ni
 
 From 1.00d-r4 this port runs the C++ reconstruction from [YomotsuHisami/th08](https://github.com/YomotsuHisami/th08) (the same author as the TH09/TH11 ports), compiled **natively for ARM64** and driven by an SDL2 host on an OpenGL ES 3 context — no Linux, Box64 or Wine involved. Earlier releases (r1–r3) used the N0zoM1z0/th08 decompilation.
 
-Companion to the [Touhou 6](https://github.com/saekaze/th06-switch), [Touhou 7](https://github.com/saekaze/th07-switch), [Touhou 9](https://github.com/saekaze/th09-switch), [Touhou 10](https://github.com/saekaze/th10-switch) and [Touhou 11](https://github.com/saekaze/th11-switch) Switch ports, with the same `touhou8.nro` + `sd:/switch/touhou/touhou8/` layout.
+Companion to the [Touhou Switch ports](https://github.com/saekaze/touhou-switch), with the same `touhou8.nro` + `sd:/switch/touhou/touhou8/` layout.
 
 ---
 
